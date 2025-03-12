@@ -1,8 +1,9 @@
 import Widget from "resource:///com/github/Aylur/ags/widget.js";
 import WallpaperImage from "./wallpaper.js";
-import TimeAndLaunchesWidget from "./timeandlaunches.js";
-import SystemWidget from "./system.js";
-// import zaWiseCat from "./zaWizeCat.js";
+import SystemWidget from "./onscreenwidgets/system.js";
+import Normal from "./onscreenwidgets/simpleclock.js";
+import Auva from "./onscreenwidgets/auva.js";
+// import { zaWiseCat } from "./onscreenwidgets/zaWizeCat.js";
 
 export default (monitor) =>
   Widget.Window({
@@ -16,10 +17,11 @@ export default (monitor) =>
       overlays: [
         Widget.Box({
           children: [
-            TimeAndLaunchesWidget(),
+            Auva(),
+            // Normal(),
             Widget.Box({ hexpand: true }),
-            userOptions.asyncGet().desktopBackground.resources ? SystemWidget(): null,
-            // Widget.Box({vertical:true,children:[zaWiseCat,Widget.Box({vexpand:true})]})
+            userOptions.asyncGet().desktopBackground.resources ? SystemWidget() : null,
+            userOptions.asyncGet().desktopBackground.enableWisecat ? Widget.Box({ vertical: true, children: [zaWiseCat, Widget.Box({ vexpand: true })] }) : null
           ],
         }),
       ],

@@ -2,34 +2,26 @@
 @import './colors';
 @import './lib_mixins';
 
-$music_transparentize_amount: 0.3;
-$music_gradient1: mix($layer0, $background, 100%);
-
-
-$music_gradient2: $color3;
-$music_gradient3: $color5;
-$music_colorstart_transparentize: 0.3;
-$music_extra_transparentize: 0.15;
+$music_transparentize_amount: 0.5;
+$music_gradient2: $color2;
+$music_gradient1: mix($layer0, $onLayer3, 60%);
+$music_gradient3: $color3;
+$music_colorstart_transparentize: 0.9;
+$music_extra_transparentize: 0.9;
 
 $secondaryContainer: transparentize(mix(mix($background, $color2, 50%), $color6, 80%), 0.5);
 
 .osd-music {
     @include menu_decel;
+    @include shadows1;
+    background-color: $layer0;
     border: 0.2px solid $outliner;
     border-radius: $rounding_mediumlarge $rounding_mediumlarge 0 0;
     padding: 0.46rem 1.423rem;
-    box-shadow: 
-    0 15px 30px rgba(0, 0, 0, 0.3), /* Increased blur and slightly darker */
-    0 10px 10px rgba(0, 0, 0, 0.25), /* Increased blur and slightly darker */
-    0 0 0 2px rgba(0, 0, 0, 0.2); /* Increased spread for the white outline */
-    
-}
-.normal-music {
-    background-color: $layer0; // coherent theme
+
 }
 .amberoled {
     background: 
-    // Layered angular gradients
     linear-gradient(127deg, 
         transparentize($music_gradient1, $music_colorstart_transparentize - 0.15),
         transparentize($music_gradient1, $music_colorstart_transparentize - $music_transparentize_amount) 80%

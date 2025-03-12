@@ -2,9 +2,9 @@ import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 const { execAsync, exec } = Utils;
 const { Box, EventBox, Label, Revealer, Overlay } = Widget;
-import { AnimatedCircProg } from "../.commonwidgets/cairo_circularprogress.js";
-import { MaterialIcon } from '../.commonwidgets/materialicon.js';
-import { getDistroName, getDistroIcon } from '../.miscutils/system.js';
+import { AnimatedCircProg } from "../../.commonwidgets/cairo_circularprogress.js";
+import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
+import { getDistroName, getDistroIcon } from '../../.miscutils/system.js';
 const ResourceValue = (name, icon, interval, valueUpdateCmd, displayFunc, props = {}) => Box({
     ...props,
     className: 'bg-system-bg txt',

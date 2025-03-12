@@ -4,17 +4,16 @@ import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 const { exec, execAsync } = Utils;
 const { Box, Button, Label, Stack } = Widget;
 import Hyprland from 'resource:///com/github/Aylur/ags/service/hyprland.js';
-
 import Wallpaper from '../../services/wallpaper.js';
 import { setupCursorHover } from '../.widgetutils/cursorhover.js';
 import { clamp } from '../.miscutils/mathfuncs.js';
 import { monitors } from '../.commondata/hyprlanddata.js';
 
-const DISABLE_AGS_WALLPAPER = true;
+const DISABLE_AGS_WALLPAPER = userOptions.asyncGet().desktopBackground.zoomEffect ? false : true ;
 
 const SWITCHWALL_SCRIPT_PATH = `${App.configDir}/scripts/color_generation/switchwall.sh`;
 const WALLPAPER_ZOOM_SCALE = 1.25; // For scrolling when we switch workspace
-const MAX_WORKSPACES = 10;
+const MAX_WORKSPACES = userOptions.asyncGet().workspaces.shown;
 
 export default (monitor = 0) => {
     const WALLPAPER_OFFSCREEN_X = (WALLPAPER_ZOOM_SCALE - 1) * monitors[monitor].width;
@@ -34,15 +33,15 @@ export default (monitor = 0) => {
             self.set_size_request(monitors[monitor].width, monitors[monitor].height);
             self
                 // TODO: reduced updates using timeouts to reduce lag
-                // .hook(Hyprland.active.workspace, (self) => {
-                //     self.attribute.workspace = Hyprland.active.workspace.id
-                //     self.attribute.updatePos(self);
-                // })
-                // .hook(App, (box, name, visible) => { // Update on open
-                //     if (self.attribute[name] === undefined) return;
-                //     self.attribute[name] = (visible ? 1 : 0);
-                //     self.attribute.updatePos(self);
-                // })
+                .hook(Hyprland.active.workspace, (self) => {
+                    self.attribute.workspace = Hyprland.active.workspace.id
+                    self.attribute.updatePos(self);
+                })
+                .hook(App, (box, name, visible) => { // Update on open
+                    if (self.attribute[name] === undefined) return;
+                    self.attribute[name] = (visible ? 1 : 0);
+                    self.attribute.updatePos(self);
+                })
                 .on('draw', (self, cr) => {
                     if (!self.attribute.pixbuf) return;
                     const styleContext = self.get_style_context();

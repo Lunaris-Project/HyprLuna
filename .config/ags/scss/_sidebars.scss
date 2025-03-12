@@ -6,42 +6,16 @@ $sidebar_chat_textboxareaColor: mix($onSurfaceVariant, $surfaceVariant, 40%);
 
 .sidebar-right {
     @include menu_decel;
-    @include elevation-border;
-    @include elevation2;
-    border-radius: $rounding_large - $elevation_margin + 0.068rem;
-    min-width: 27.818rem;
     background-color: $background;
     padding: 1.023rem;
+    border-radius: 0 $rounding_small $rounding_small 0;
+
 }
-.sidebar-round-l {
-    border-radius: 0 $rounding_mediumlarge $rounding_mediumlarge 0;
-}
-.sidebar-l {
-    @include menu_decel;
-    min-width: 27.818rem;
-    background-color: $background;
-    padding: 1.423rem;
-    border: 0.6px solid $outliner;
-    border-left: none;
-}
-.sidebar-r {
-    @include menu_decel;
-    min-width: 27.818rem;
-    background-color: $background;
-    padding: 1.423rem;
-    border: 0.6px solid $outliner;
-    border-right: none;
-}
-.sidebar-round-r {
-    border-radius:  $rounding_mediumlarge 0 0  $rounding_mediumlarge;
-}
+
 .sidebar-left {
     @include menu_decel;
-    @include elevation-border;
-    @include elevation2;
-    border-radius: $rounding_large - $elevation_margin + 0.068rem;
-    min-width: 27.818rem;
     background-color: $background;
+    border-radius: $rounding_small 0 0 $rounding_small;
     padding: 1.023rem;
 }
 
@@ -961,11 +935,9 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
 
 .sidebar-prayertime-top {
     @include normal-rounding;
-    background: linear-gradient(
-        270deg,
-        $primary 0%,
-        lighten($surfaceContainerHighest, 30%) 100%
-    );
+    background: linear-gradient(270deg,
+            $primary 0%,
+            lighten($surfaceContainerHighest, 30%) 100%);
     padding: 0.82rem;
     // margin-top:0.7rem;
     margin-bottom: 1rem;
@@ -1087,21 +1059,17 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
 
 .prayer-times-next {
     @include normal-rounding;
-    background: linear-gradient(
-        135deg,
-        $primary 0%,
-        mix($primary, $surfaceContainerHighest, 85%) 100%
-    );
+    background: linear-gradient(135deg,
+            $primary 0%,
+            mix($primary, $surfaceContainerHighest, 85%) 100%);
     color: $onPrimary;
     padding: 1.2rem 0.682rem;
     margin-bottom: 0.682rem;
 
     &:hover {
-        background: linear-gradient(
-            135deg,
-            $primary 0%,
-            mix($primary, $surfaceContainerHighest, 75%) 100%
-        );
+        background: linear-gradient(135deg,
+                $primary 0%,
+                mix($primary, $surfaceContainerHighest, 75%) 100%);
     }
 }
 
@@ -1136,11 +1104,9 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
 .prayer-times-date {
     @include small-rounding;
     padding: 0.341rem 0.682rem;
-    background: linear-gradient(
-        to right,
-        $surfaceContainerHigh 0%,
-        mix($surfaceContainerHigh, $primary, 95%) 100%
-    );
+    background: linear-gradient(to right,
+            $surfaceContainerHigh 0%,
+            mix($surfaceContainerHigh, $primary, 95%) 100%);
     color: $onSurfaceVariant;
     margin-bottom: 0.682rem;
     border-left: 3px solid $primary;
@@ -1161,7 +1127,7 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
     @include icon-material;
     color: mix($onSurface, $surface, 75%);
     margin-right: 0.5rem;
-    
+
     &-next {
         color: $onPrimary;
         margin-right: 0.5rem;
@@ -1189,6 +1155,7 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
             }
         }
     }
+
     &-delete {
         @include normal-rounding;
         padding: 0.2rem;
@@ -1201,11 +1168,13 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
             background-color: mix($error, $surfaceContainerHighest, 85%);
         }
     }
+
     &-item {
         @include normal-rounding;
         @include titlefont;
         color: $onSurface;
     }
+
     &-icon {
         @include icon-material;
         // font-size: 1.1em;
@@ -1376,6 +1345,7 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
 .task-manager-scrollable {
     min-height: 20.455rem;
 }
+
 .audio-files-widget {
     background-color: $surfaceContainerLow;
     padding: 1rem;
@@ -1411,12 +1381,14 @@ $skeleton-accent: mix($secondary, $onSecondary, 50%);
     margin-left: 8px;
     color: $onSurface;
 }
+
 .sidebar-bottom {
     border-radius: $rounding_medium 0 0 0;
 
 }
+
 .material-welcome-logo {
-    padding:0.5rem;
-    min-width:4rem;
-    margin-left:0.135rem
+    padding: 0.5rem;
+    min-width: 4rem;
+    margin-left: 0.135rem
 }

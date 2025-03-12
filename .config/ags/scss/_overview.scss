@@ -5,7 +5,7 @@
     margin-bottom:4rem;
     border-radius: 0 0 $rounding_mediumlarge $rounding_mediumlarge;
     padding-right: 3.5rem;
-    border-bottom:0.1px solid $outliner;
+    border-bottom:0.3px solid $outliner;
     background-color: $background;
     color: $onBackground;
 
@@ -24,7 +24,7 @@
     margin-bottom:4rem;
     border-radius: $rounding_mediumlarge;
     padding: 0.2rem 3.5rem 0.2rem 0;
-    border-bottom:0.1px solid $outliner;
+    border: 0.3px solid $outliner;
     background-color: $background;
     color: $onSurfaceVariant;
 

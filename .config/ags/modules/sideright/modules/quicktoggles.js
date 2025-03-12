@@ -273,7 +273,7 @@ export const ModuleGameMode = async (props = {}) => {
     };
 }
 
-export const ModulePowerIcon = (props = {}) => Widget.Button({
+export const ModulePowerIcon = async  (props = {}) => Widget.Button({
     ...props,
     className: 'txt-small sidebar-iconbutton',
     tooltipText: getString('Session'),

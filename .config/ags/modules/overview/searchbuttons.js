@@ -35,7 +35,7 @@ export const DirectoryButton = ({ parentPath, name, type, icon }) => {
     const actionTextRevealer = Widget.Revealer({
         revealChild: false,
         transition: "slide_left",
-        transitionDuration: animations.durationSmall,
+        transitionDuration: animations.durationHuge,
         child: actionText,
     });
 
@@ -102,7 +102,7 @@ export const DesktopEntryButton = (app) => {
     const actionTextRevealer = Widget.Revealer({
         revealChild: false,
         transition: "slide_left",
-        transitionDuration: animations.durationSmall,
+        transitionDuration: animations.durationHuge,
         child: actionText,
     });
     const isFile = app.iconName !== null && app.iconName.startsWith('~') || app.iconName.startsWith('.') || app.iconName.startsWith('/');

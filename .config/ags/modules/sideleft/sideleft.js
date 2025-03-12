@@ -13,7 +13,7 @@ import { TabContainer } from '../.commonwidgets/tabcontainer.js';
 import { checkKeybind } from '../.widgetutils/keybind.js';
 import { writable } from '../../modules/.miscutils/store.js';
 import { RoundedCorner } from '../.commonwidgets/cairo_roundedcorner.js';
-const elevate = userOptions.asyncGet().etc.widgetCorners ? "sidebar-l sidebar-round-l shadow-window"  : "sidebar-l elevation shadow-window" ;
+const elevate = userOptions.asyncGet().etc.widgetCorners ? "sidebar-left"  : "sidebar-left elevation shadow-window" ;
 import githubWidget from './github.js';
 const SIDEBARTABS = {
     'apis': {
@@ -52,7 +52,6 @@ const pinButton = Button({
 
             const sideleftContent = sideleftWindow.get_children()[0];
             if (!sideleftContent) return;
-
             sideleftContent.toggleClassName('sidebar-pinned', self.attribute.enabled);
             sideleftWindow.exclusivity = self.attribute.enabled ? 'exclusive' : 'normal';
         },
@@ -76,7 +75,6 @@ export const WidgetContent = (ORDER) => {
     return TabContainer({
         icons: CONTENTS.map((item) => item.materialIcon),
         names: CONTENTS.map((item) => item.friendlyName),
-        css: `${userOptions.asyncGet().sidebar.extraCss}`,
         children: CONTENTS.map((item) => item.content),
         className: `${elevate}`,
         setup: (self) => self.hook(App, (self, currentName, visible) => {
@@ -85,26 +83,22 @@ export const WidgetContent = (ORDER) => {
         }),
     });
 };
-export let widgetContent = WidgetContent(ORDER.asyncGet());
-const content = () => {
-    return Box({
-        vertical: true,
-        vexpand: true,
-        children: [
-            userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('bottomleft', {className: 'corner corner-colorscheme'}) : null,
-            widgetContent,
-            userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('topleft', {className: 'corner corner-colorscheme'}) : null,
-        ],
-      })
-}
+export const widgetContent = WidgetContent(ORDER.asyncGet());
 export default () => {
     let unsubscribe = () => {};
 
     const box = Box({
-        vertical: true,
         vexpand: true,
         children: [
-            content(),
+            widgetContent,
+            userOptions.asyncGet().etc.widgetCorners ? Box({
+                vertical:true,
+                children:[
+                    RoundedCorner('topleft', {className: 'corner'}),         
+                    Box({vexpand:true}),
+                    RoundedCorner('bottomleft', {className: 'corner'}),
+                ]
+            }):null
         ],
         setup: (self) => self
             .on('key-press-event', (widget, event) => { // Handle keybinds

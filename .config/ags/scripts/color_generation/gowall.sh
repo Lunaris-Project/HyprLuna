@@ -18,7 +18,7 @@ gowall_theme=$(sed -n '4p' "${colormodefile}")
 # Dynamically extract the extension from the current wallpaper
 extension="${currentwallpaper##*.}"
 gowall_img="gowall.${extension}"
-gowall_img_path="$STATE_DIR/user/$gowall_img"
+gowall_img_path="$STATE_DIR/user/gowall/$gowall_img"
 # Function to run gowall conversion (renamed to avoid shadowing the external command)
 run_gowall() {
     # Use the dynamic output file name based on the input extension

@@ -6,19 +6,22 @@ $bar_ws_width_focus_active: 6.045rem;
 @mixin bar-group-rounding {
     @include small-rounding;
 }
+
 .bar-module-box {
     background-color: $layer0;
     color: $onLayer0;
     @include full-rounding;
-    padding:0.5rem 1.5rem;
+    padding: 0.5rem 1.5rem;
 }
+
 .bar-icon {
     @include icon-material;
     @include full-rounding;
     background-color: $layer0;
     color: $onLayer0;
     font-size: 2.032rem;
-  }
+}
+
 .bar-util-btn2 {
     @include element-decel;
     background-color: $layer0;
@@ -26,15 +29,18 @@ $bar_ws_width_focus_active: 6.045rem;
     @include full-rounding;
     border: 0.6px solid $outliner;
 }
+
 .bar-notch {
     background-color: $layer0;
-     min-width:16.1rem;
+    min-width: 16.1rem;
     border-radius: 0 0 $rounding_mediumlarge $rounding_mediumlarge;
     border-bottom: 0.6px solid $outliner
 }
+
 .bar-resources {
     progressbar {
         @include element_decel;
+
         // min-height: 0.2rem;
         trough {
             @include full-rounding;
@@ -52,17 +58,24 @@ $bar_ws_width_focus_active: 6.045rem;
     }
 
     &:first-child progressbar {
-        progress { background-color: $primary; }
+        progress {
+            background-color: $primary;
+        }
     }
 
     &:nth-child(2) progressbar {
-        progress { background-color: mix($primary, $onSurface, 80%); }
+        progress {
+            background-color: mix($primary, $onSurface, 80%);
+        }
     }
 
     &:last-child progressbar {
-        progress { background-color: mix($primary, $onSurface, 60%); }
+        progress {
+            background-color: mix($primary, $onSurface, 60%);
+        }
     }
 }
+
 .bar-knocks {
     @include menu_accel_fast;
     border-radius: $rounding_mediumlarge;
@@ -70,10 +83,13 @@ $bar_ws_width_focus_active: 6.045rem;
     border: 0.4px solid $outliner;
     background-color: $layer0;
     padding: 0rem 1rem;
-    box-shadow: 
-    0 4px 2px rgba($shadow, 0.15), /* Lighter, broader blur for depth */
-    0 3px 4px rgba($shadow, 0.2),  /* Subtle mid-distance shadow */;
-    
+    box-shadow:
+        0 4px 2px rgba($shadow, 0.15),
+        /* Lighter, broader blur for depth */
+        0 3px 4px rgba($shadow, 0.2),
+        /* Subtle mid-distance shadow */
+    ;
+
     &.song-changing {
         animation: multiSweep 2.2s linear;
         animation-iteration-count: 13;
@@ -81,43 +97,56 @@ $bar_ws_width_focus_active: 6.045rem;
 }
 
 .bar-floating {
-    background-color:$layer0;
+    background-color: $layer0;
     @include elevation2;
     border: 0.4px solid rgba($outliner, 0.6);
     @include anim-enter;
     @include normal-rounding;
-    box-shadow: 
-    0 5px 3px rgba($shadow, 0.15), /* Lighter, broader blur for depth */
-    0 8px 6px rgba($shadow, 0.2),  /* Subtle mid-distance shadow */
-    // 0 20px 28px rgba(0, 0, 0, 0.05),  /* Subtle mid-distance shadow */
+    box-shadow:
+        0 5px 3px rgba($shadow, 0.15),
+        /* Lighter, broader blur for depth */
+        0 8px 6px rgba($shadow, 0.2),
+        /* Subtle mid-distance shadow */
+        // 0 20px 28px rgba(0, 0, 0, 0.05),  /* Subtle mid-distance shadow */
 
 }
 
 .bar-floating-outline {
-    background-color:$layer0;
+    background-color: $layer0;
     @include elevation2;
     // border: 0.5px solid rgba($onSurfaceVariant, 0.5);
     @include anim-enter;
     @include small-rounding;
 }
+
 .bar-height {
     min-height: 2.827rem;
 }
+
 .prim-txt {
     color: $secondary;
 }
+
 .bar-bg {
     background-color: $layer0;
     min-height: 2.827rem;
 }
+
+.bar-vertical-pinned {
+    background-color: $background;
+    margin-right: 0.3rem;
+}
+
 .bar-pads {
     background-color: $layer0;
     @include large-rounding;
 }
+
 .bar-bg-focus {
     background-color: $layer0;
     min-height: 1.364rem;
 }
+
 .bar-bg-nothing {
     background-color: $layer0;
     min-height: 2px;
@@ -142,12 +171,14 @@ $bar_ws_width_focus_active: 6.045rem;
 .bar-saadi {
     background-color: $background;
 }
+
 .group-saadi {
     @include full-rounding;
     padding: 0 1rem;
     margin: 0.6rem 0.4rem;
     background-color: $layer1;
 }
+
 .bar-group2 {
     @include titlefont;
     color: $battOnLayer2;
@@ -155,32 +186,35 @@ $bar_ws_width_focus_active: 6.045rem;
     padding: 0 1.3rem;
     background-color: $battLayer2;
 }
+
 .bar-gradiant-tert {
     @include full-rounding;
     padding: 0 1rem;
     margin: 0.6rem 0.4rem;
-    background: linear-gradient(90deg, $surfaceContainerHighest, $tertiaryFixed);    
-} 
+    background: linear-gradient(90deg, $surfaceContainerHighest, $tertiaryFixed);
+}
 
 .bar-gradiant-prim {
     @include full-rounding;
     padding: 0 1rem;
     margin: 0.6rem 0.4rem;
-    background: linear-gradient(90deg, $surfaceContainerHighest, $primaryFixed);    
+    background: linear-gradient(90deg, $surfaceContainerHighest, $primaryFixed);
 }
 
 .bar-gradiant-sec {
     @include full-rounding;
     padding: 0 1rem;
     margin: 0.6rem 0.4rem;
-    background: linear-gradient(90deg, $surfaceContainerHighest, $tertiaryFixed);    
-}  
+    background: linear-gradient(90deg, $surfaceContainerHighest, $tertiaryFixed);
+}
+
 .group-saadi-short {
     padding: 0 0.5rem;
     @include full-rounding;
     margin: 0.6rem 0.4rem;
     background-color: $layer1;
 }
+
 .bar-group-pad {
     padding: 0.205rem;
 }
@@ -192,6 +226,7 @@ $bar_ws_width_focus_active: 6.045rem;
 .bar-group-pad-system {
     padding: 0rem 0.341rem;
 }
+
 .bar-group-pad-vertical {
     @include bar-group-rounding;
     -gtk-outline-radius: 1.364rem;
@@ -244,10 +279,12 @@ $bar_ws_width_focus_active: 6.045rem;
 .bar-ws-container {
     transition: 700ms cubic-bezier(0.1, 1, 0, 1);
 }
+
 .active-window-tb {
     background-color: $primary;
     @include large-rounding;
 }
+
 .bar-ws {
     font-size: 1.02rem;
     font-weight: 600;
@@ -302,7 +339,7 @@ $bar_ws_width_focus_active: 6.045rem;
 }
 
 .bar-bat {
-    padding:0 3px;
+    padding: 0 3px;
     @include full-rounding;
     @include element_decel;
     min-height: 2.3rem;
@@ -310,8 +347,9 @@ $bar_ws_width_focus_active: 6.045rem;
     border-radius: 10rem;
     color: $battOnLayer2;
 }
+
 .bar-bat-circprog {
-    border:0.12rem solid $outline;
+    border: 0.12rem solid $outline;
     @include fluent_decel_long;
     min-width: 0.23rem; // line width
     min-height: 2.1rem;
@@ -499,7 +537,7 @@ $bar_ws_width_focus_active: 6.045rem;
 
 .corner-black {
     background-color: $black;
-    padding:100px
+    padding: 100px
 }
 
 .bar-wintitle-topdesc {
@@ -516,7 +554,7 @@ $bar_ws_width_focus_active: 6.045rem;
     padding: 0.341rem;
 }
 
-.bar-space-button > box:first-child {
+.bar-space-button>box:first-child {
     @include full-rounding;
     padding: 0rem 0.682rem;
 }
@@ -527,7 +565,7 @@ $bar_ws_width_focus_active: 6.045rem;
     }
 }
 
-.bar-space-area-rightmost > box {
+.bar-space-area-rightmost>box {
     padding-right: 1.364rem;
 }
 
@@ -576,6 +614,7 @@ $bar_ws_width_focus_active: 6.045rem;
     background-color: $layer0;
     color: $utilsOnLayer2;
 }
+
 .bar-util-btn:hover,
 .bar-util-btn:focus {
     background-color: $layer2Hover;
@@ -630,13 +669,16 @@ $bar_ws_width_focus_active: 6.045rem;
 
 .battery-icon-box {
     padding: 0 2px;
+
     &.bar-batt-charging {
         color: $primary;
     }
+
     &.bar-batt-low {
         color: $error;
     }
 }
+
 .battery-scale-bar {
     min-width: 50px;
     min-height: 5px;
@@ -650,6 +692,7 @@ $bar_ws_width_focus_active: 6.045rem;
         border-radius: 99px;
         min-height: 25.5px;
     }
+
     &.bar-batt-charging trough progress {
         background: linear-gradient(90deg, $black, $primary);
         border-radius: 99px;
@@ -668,10 +711,12 @@ $bar_ws_width_focus_active: 6.045rem;
     0% {
         background-position: 0% 50%;
     }
+
     100% {
         background-position: 100% 50%;
     }
 }
+
 .avatar-widget {
     @include normal-rounding;
     padding: 3px 6px;

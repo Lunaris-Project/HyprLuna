@@ -2,7 +2,7 @@ import Widget from "resource:///com/github/Aylur/ags/widget.js";
 import GLib from "gi://GLib";
 import Gio from "gi://Gio";
 
-const SUPPORTED_FORMATS = /\.(mp3|wav|ogg|m4a|flac|opus)$/i;
+const SUPPORTED_FORMATS = /\.(mp3|wav|ogg|m4a|flac|opus|mp4|mkv)$/i;
 
 const AudioFileButton = (filename, filepath) => Widget.Button({
     className: "audio-files-button",

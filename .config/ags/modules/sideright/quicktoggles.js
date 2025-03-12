@@ -2,17 +2,13 @@ const { GLib } = imports.gi;
 import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-
 import Bluetooth from 'resource:///com/github/Aylur/ags/service/bluetooth.js';
 import Network from 'resource:///com/github/Aylur/ags/service/network.js';
 const { execAsync, exec } = Utils;
 import { BluetoothIndicator, NetworkIndicator } from '../.commonwidgets/statusicons.js';
 import { setupCursorHover } from '../.widgetutils/cursorhover.js';
 import { MaterialIcon } from '../.commonwidgets/materialicon.js';
-import { sidebarOptionsStack } from './sideright.js';
 import { calendarRevealer } from './sideright.js';
-// Кэшируем часто используемые значения
-const userOpts = userOptions.asyncGet();
 const configDir = App.configDir;
 
 export const ToggleIconWifi = (props = {}) => {
@@ -21,7 +17,7 @@ export const ToggleIconWifi = (props = {}) => {
         tooltipText: getString('Wifi | Right-click to configure'),
         onClicked: Network.toggleWifi,
         onSecondaryClickRelease: () => {
-            execAsync(['bash', '-c', userOpts.apps.network]).catch(print);
+            execAsync(['bash', '-c', userOptions.asyncGet().apps.network]).catch(print);
             closeEverything();
         },
         child: NetworkIndicator(),
@@ -46,7 +42,7 @@ export const ToggleIconBluetooth = (props = {}) => {
             exec(Bluetooth?.enabled ? 'rfkill block bluetooth' : 'rfkill unblock bluetooth');
         },
         onSecondaryClickRelease: () => {
-            execAsync(['bash', '-c', userOpts.apps.bluetooth]).catch(print);
+            execAsync(['bash', '-c', userOptions.asyncGet().apps.bluetooth]).catch(print);
             closeEverything();
         },
         child: BluetoothIndicator(),
@@ -89,7 +85,7 @@ export const HyprToggleIcon = async (icon, name, hyprlandConfigValue, props = {}
 }
 
 export const ModuleNightLight = async (props = {}) => {
-    if (!exec(`bash -c 'command -v gammastep'`)) return null;
+    if (!exec(`bash -c 'command -v hyprsunset'`)) return null;
     
     const button = Widget.Button({
         attribute: { enabled: false },
@@ -100,22 +96,15 @@ export const ModuleNightLight = async (props = {}) => {
             self.toggleClassName('sidebar-button-active', self.attribute.enabled);
             
             if (self.attribute.enabled) {
-                await execAsync('gammastep').catch(print);
+                await execAsync([`'bash',' -c','hyprsunset -t ${userOptions.asyncGet().etc.nightLightTemp}'`]).catch(print);
             } else {
-                self.sensitive = false;
-                await execAsync('pkill gammastep').catch(print);
-                const checkInterval = setInterval(() => {
-                    execAsync('pkill -0 gammastep').catch(() => {
-                        self.sensitive = true;
-                        clearInterval(checkInterval);
-                    });
-                }, 500);
+                await execAsync('killall hyprsunset').catch(print);
             }
         },
         child: MaterialIcon('nightlight', 'norm'),
         setup: (self) => {
             setupCursorHover(self);
-            self.attribute.enabled = !!exec('pidof gammastep');
+            self.attribute.enabled = !!exec('pidof hyprsunset');
             self.toggleClassName('sidebar-button-active', self.attribute.enabled);
         },
         ...props,

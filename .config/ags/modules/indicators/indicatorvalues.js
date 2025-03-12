@@ -131,7 +131,6 @@ const scaleIndicator = OsdValue({
     extraClassName: 'osd-scale',
     extraProgressClassName: 'osd-scale-progress',
     labelSetup: (self) => {
-        // Store the previous value to detect changes.
         let previousScale = Scale.scaling_value;
         // Initialize label with the current value as a percentage.
         self.label = `${(previousScale * 100).toFixed(0)}`;

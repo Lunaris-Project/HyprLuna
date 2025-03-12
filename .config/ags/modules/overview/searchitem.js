@@ -9,7 +9,7 @@ export const searchItem = ({ materialIconName, name, actionName, content, onActi
     const actionTextRevealer = Widget.Revealer({
         revealChild: false,
         transition: "slide_left", 
-        transitionDuration: userOptions.asyncGet().animations.durationSmall,
+        transitionDuration: userOptions.asyncGet().animations.durationHuge,
         child: actionText,
     });
 

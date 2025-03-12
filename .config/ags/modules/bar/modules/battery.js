@@ -6,12 +6,7 @@ const { Box, Label, Overlay, Revealer, EventBox, Button } = Widget;
 const { execAsync, exec } = Utils;
 const { GLib } = imports.gi;
 import { RevealerState } from "./revealercontrol.js";
-
-// Common widgets
 import { AnimatedCircProg } from "../../.commonwidgets/cairo_circularprogress.js";
-
-// Configuration
-const { userOptions } = globalThis;
 
 // Constants
 const POWER_DRAW = {
@@ -27,9 +22,9 @@ const POWER_DRAW = {
 };
 
 // Cache state
-const powerDrawCache = { 
-    value: "N/A", 
-    timestamp: 0 
+const powerDrawCache = {
+    value: "N/A",
+    timestamp: 0
 };
 
 // Utility functions
@@ -84,10 +79,10 @@ const BatteryContent = () => {
 
     const timeToEmptyFullLabel = Label({ hpack: "start", className: "sec-txt txt-smallie" });
     const powerDrawLabel = Label({ hpack: "start", className: "sec-txt txt-smallie" });
-    
+
     const detailsBox = Box({
-        hpack: "start", 
-        vertical: true, 
+        hpack: "start",
+        vertical: true,
         children: [timeToEmptyFullLabel, powerDrawLabel],
     });
 
@@ -170,8 +165,8 @@ const BatteryContent = () => {
             className: "battery-module spacing-h-5",
             children: [
                 Overlay({
-                    child:batteryIcon,
-                    overlays:[
+                    child: batteryIcon,
+                    overlays: [
                         percentageLabel,
                     ]
                 }),
@@ -188,6 +183,6 @@ export default () => Widget.EventBox({
     onSecondaryClick: () => {
         execAsync(["bash", "-c", userOptions.asyncGet().apps.taskManager]);
     },
-    onMiddleClick: () => {},
+    onMiddleClick: () => { },
     child: BatteryContent(),
 });

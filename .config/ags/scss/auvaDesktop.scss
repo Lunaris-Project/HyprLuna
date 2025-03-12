@@ -1,0 +1,48 @@
+.auva-clock {
+    @include mainfont;
+    font-size: 1.8rem;
+    color: $onPrimary
+}
+
+.auva-date {
+    @include mainfont;
+    font-size: 1.4rem;
+    color: $onPrimary
+}
+
+.auva-day {
+    font-family: 'steelfish';
+    font-size: 4rem;
+}
+
+.auva-day-color {
+    font-family: 'steelfish';
+    color: $primary;
+    font-size: 4rem;
+
+}
+
+.auva-weather {
+    @include mainfont;
+    font-size: 1.3rem;
+    font-weight: 300;
+}
+
+.auva-greeting {
+    font-family: 'Big John';
+    font-size: 3rem
+}
+
+.auva-circprog-main {
+    @include fluent_decel_long;
+    min-width: 0.705rem;
+    min-height: 4.7rem;
+    padding: 0rem;
+    background: linear-gradient(to right, $primary 0%, $surface 100%);
+}
+
+.auva-clock-box {
+    @include full-rounding;
+    padding: 0.2rem 1.5rem;
+    background-color: $primary;
+}

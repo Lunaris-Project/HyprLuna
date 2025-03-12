@@ -10,6 +10,7 @@ import userOptions from '../.configuration/user_options.js';
 import { currentShellMode, updateMonitorShellMode } from '../../variables.js';
 
 export const hasUnterminatedBackslash = str => /\\+$/.test(str);
+const jsonPath = GLib.get_home_dir() + '/.ags/config.json';
 const logo = App.configDir + "/assets/icons/logo-symbolic.svg"
 export function launchCustomCommand(command) {
     const [cmd, ...args] = command.toLowerCase().split(' ');
@@ -37,6 +38,7 @@ export function launchCustomCommand(command) {
         '>light': () => darkMode.value = false,
         '>dark': () => darkMode.value = true,
         '>todo': () => Todo.add(args.join(' ')),
+        '>td': () => Todo.add(args.join(' ')),
         '>shutdown': () => execAsync(['bash', '-c', 'systemctl poweroff || loginctl poweroff']).catch(print),
         '>reboot': () => execAsync(['bash', '-c', 'systemctl reboot || loginctl reboot']).catch(print),
         '>sleep': () => execAsync(['bash', '-c', 'systemctl suspend || loginctl suspend']).catch(print),
@@ -87,7 +89,6 @@ export function launchCustomCommand(command) {
             }
         },
         '>lofi': () => {
-    // Determine the music directory (using the user option if provided)
     const musicDir = GLib.get_home_dir() + (userOptions.asyncGet().music.musicDir || "/Music");
     const supportedFormats = /\.(mp3|wav|ogg|m4a|flac|opus)$/i;
 
@@ -116,20 +117,18 @@ export function launchCustomCommand(command) {
             const playlist = audioFiles.slice(randomIndex).concat(audioFiles.slice(0, randomIndex));
             // Convert to full file paths
             const playlistPaths = playlist.map(file => `${musicDir}/${file}`);
-
             // Kill any running instance of VLC
             execAsync(['bash', '-c', 'pkill vlc']).catch(print);
-
             // Build the VLC command with the entire playlist in order
+            
             const vlcCommand = [
                 'bash',
                 '-c',
-                `vlc --qt-start-minimized ${playlistPaths.map(path => `"${path}"`).join(' ')}`
+                `vlc --loop --qt-start-minimized ${playlistPaths.map(path => `"${path}"`).join(' ')}`
             ];
 
             execAsync(vlcCommand).catch(error => {
                 print(`Error playing playlist: ${error}`);
-                // Fallback: play just the randomly chosen file using xdg-open
                 execAsync(vlcCommand).catch(print);
             });
         } else {
@@ -139,7 +138,6 @@ export function launchCustomCommand(command) {
         print(`Error accessing Music directory: ${error}`);
     }
 },
-
         '>yt': () => {
             if (!args[0]) return;
             const searchQuery = args.join(' ');
@@ -283,6 +281,7 @@ if results:
         },
         '>stop': () => {
             execAsync(['bash', '-c', 'killall mpv']).catch(print);
+            execAsync(['bash', '-c', 'killall vlc']).catch(print);
         },
         '>prev': () => {
             execAsync(['playerctl', 'previous']).catch(print);
@@ -290,21 +289,24 @@ if results:
         '>pin': () => {
             if (!args[0]) return;
             const appName = args.join(' ').toLowerCase();
-            const configPath = `${App.configDir}/modules/.configuration/user_options.default.json`;
-            
             try {
-                const config = JSON.parse(Utils.readFile(configPath));
+                const config = JSON.parse(Utils.readFile(jsonPath));
                 if (!config.dock) config.dock = {};
                 if (!config.dock.pinnedApps) config.dock.pinnedApps = [];
                 
                 if (!config.dock.pinnedApps.includes(appName)) {
                     config.dock.pinnedApps.push(appName);
-                    Utils.writeFile(JSON.stringify(config, null, 2), configPath);
-                    execAsync(['bash', '-c', 'ags -q; ags']).catch(print);
+                    Utils.writeFile(JSON.stringify(config, null, 2), jsonPath);
                 }
             } catch (error) {
                 print('Error pinning app:', error);
             }
+        },
+        '>conf': async ()  => {
+            await execAsync(['bash','-c', `kitty nvim '.config/ags'`]).catch(print);
+        },
+        '>gn': async ()  => {
+            await execAsync(['bash','-c', `hyprsunset -t ${userOptions.asyncGet().etc.nightLightTemp}`]).catch(print);
         },
         '>unpin': () => {
             if (!args[0]) return;
@@ -371,9 +373,17 @@ if results:
                 '-i',
                 `${logo}`,
                 '-t',
-                '3000'  // Show for 3 seconds
+                '3000'
             ]).catch(print);
         },
+        '>pick': () => {
+            execAsync(['hyprpicker','-t','-a','-q','--no-fancy']).catch(print);
+        },
+        '>rewall': () => {
+            App.closeWindow('wallselect')
+            .then(`rm -rf .cache/ags/user/wallpapers`).catch(print);
+        },
+
         '>': () => {}
     };
 

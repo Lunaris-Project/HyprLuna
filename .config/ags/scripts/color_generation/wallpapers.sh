@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Default wallpaper directory
-WALLPAPER_DIR=/run/media/pharmaracist/Data/General-Archive/Repos/walls    #"$HOME/Pictures/Wallpapers"
+WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 CURRENT_WALLPAPER_FILE="$HOME/.local/state/ags/user/current_wallpaper.txt"
 CACHE_DIR="$XDG_CACHE_HOME/ags"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -46,11 +46,10 @@ set_wallpaper() {
     local wallpaper="$1"
     if [ -n "$wallpaper" ] && [ -f "$wallpaper" ]; then
         echo "$wallpaper" > "$CURRENT_WALLPAPER_FILE"
+        swww img $SWWW_OPTIONS $wallpaper &
         matugen image "$wallpaper" \
             --mode "$MODE" \
-            --type "$SCHEME" \
-            --contrast "$CONTRAST" &
-        swww img $SWWW_OPTIONS $wallpaper &
+            --type "$SCHEME"
     fi
 }
 

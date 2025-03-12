@@ -1,15 +1,8 @@
-const { GLib } = imports.gi;
-import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
-import Service from 'resource:///com/github/Aylur/ags/service.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-
-import Variable from 'resource:///com/github/Aylur/ags/variable.js';
+const { GLib } = imports.gi;
 const { execAsync, exec } = Utils;
 const { Box, Label, Button, Revealer, EventBox } = Widget;
-import { setupCursorHover } from '../.widgetutils/cursorhover.js';
-import { quickLaunchItems } from './data_quicklaunches.js'
-
 const TimeAndDate = () => Box({
     vertical: true,
     className: 'spacing-v--5',
@@ -33,43 +26,14 @@ const TimeAndDate = () => Box({
     ]
 })
 
-const QuickLaunches = () => Box({
-    vertical: true,
-    className: 'spacing-v-10',
-    children: [
-        Label({
-            xalign: 0,
-            className: 'bg-quicklaunch-title',
-            label: 'Quick Launches',
-        }),
-        Box({
-            hpack: 'start',
-            className: 'spacing-h-5',
-            children: quickLaunchItems.map((item, i) => Button({
-                onClicked: () => {
-                    execAsync(['bash', '-c', `${item["command"]}`]).catch(print);
-                },
-                className: 'bg-quicklaunch-btn',
-                child: Label({
-                    label: `${item["name"]}`,
-                }),
-                setup: (self) => {
-                    setupCursorHover(self);
-                }
-            })),
-        })
-    ]
-})
-
 export default () => Box({
     hpack: 'start',
     vpack: 'end',
     vertical: true,
-    css:`margin:0 4rem 2rem`,
+    css: `margin:0 4rem 2rem`,
     className: 'bg-time-box spacing-h--10',
     children: [
         TimeAndDate(),
-        // QuickLaunches(),
     ],
 })
 

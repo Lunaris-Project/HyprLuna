@@ -1,7 +1,7 @@
 const { Gio, GLib } = imports.gi;
 import Service from 'resource:///com/github/Aylur/ags/service.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-const { exec, execAsync } = Utils;
+const { execAsync } = Utils;
 
 class PrayerTimesService extends Service {
     static {

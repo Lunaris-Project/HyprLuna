@@ -389,7 +389,7 @@ export default (overviewMonitor = 0) => {
         hpack: userOptions.asyncGet().etc.widgetCorners ? 'fill' : 'center',
         transition: 'slide_down',
         hexpand:true,
-        transitionDuration: userOpts.animations.durationSmall,
+        transitionDuration: userOpts.animations.durationHuge,
         child:Widget.Box({
             vertical:true,
             hexpand:true,

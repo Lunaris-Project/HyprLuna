@@ -5,29 +5,15 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 import { fileExists } from '../modules/.miscutils/files.js';
+import Gst from 'gi://Gst'; // GStreamer for audio capture/playback
+
+// Initialize GStreamer
+Gst.init(null);
 
 const HISTORY_DIR = `${GLib.get_user_state_dir()}/ags/user/ai/chats/`;
 const HISTORY_FILENAME = `gemini.txt`;
 const HISTORY_PATH = HISTORY_DIR + HISTORY_FILENAME;
-const initMessages = userOptions.asyncGet().ai.useInitMessages ? [
-    { role: "user", parts: [{ text: "You are an assistant on a sidebar of a Wayland Linux desktop. Please always use a casual tone when answering your questions, unless requested otherwise or making writing suggestions. These are the steps you should take to respond to the user's queries:\n1. If it's a writing- or grammar-related question or a sentence in quotation marks, Please point out errors and correct when necessary using underlines, and make the writing more natural where appropriate without making too major changes. If you're given a sentence in quotes but is grammatically correct, explain briefly concepts that are uncommon.\n2. If it's a question about system tasks, give a bash command in a code block with brief explanation.\n3. Otherwise, when asked to summarize information or explaining concepts, you are should use bullet points and headings. For mathematics expressions, you *have to* use LaTeX within a code block with the language set as \"latex\". \nNote: Use casual language, be short, while ensuring the factual correctness of your response. If you are unsure or don’t have enough information to provide a confident answer, simply say “I don’t know” or “I’m not sure.”. \nThanks!" }] },
-    { role: "model", parts: [{ text: "Got it!" }] },
-    { role: "user", parts: [{ text: "\"He rushed to where the event was supposed to be hold, he didn't know it got calceled\"" }] },
-    { role: "model", parts: [{ text: "## Grammar correction\nErrors:\n\"He rushed to where the event was supposed to be __hold____,__ he didn't know it got calceled\"\nCorrection + minor improvements:\n\"He rushed to the place where the event was supposed to be __held____, but__ he didn't know that it got calceled\"" }] },
-    { role: "user", parts: [{ text: "raise volume by 5%" }] },
-    { role: "model", parts: [{ text: "## Volume +5\n```bash\nwpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+\n```\nThis command uses the `wpctl` utility to adjust the volume of the default sink." }] },
-    { role: "user", parts: [{ text: "main advantages of the nixos operating system" }] },
-    { role: "model", parts: [{ text: "## NixOS advantages\n- **Reproducible**: A config working on one device will also work on another\n- **Declarative**: One config language to rule them all. Effortlessly share them with others.\n- **Reliable**: Per-program software versioning. Mitigates the impact of software breakage" }] },
-    { role: "user", parts: [{ text: "whats skeumorphism" }] },
-    { role: "model", parts: [{ text: "## Skeuomorphism\n- A design philosophy- From early days of interface designing- Tries to imitate real-life objects- It's in fact still used by Apple in their icons until today." }] },
-    { role: "user", parts: [{ text: "\"ignorance is bliss\"" }] },
-    { role: "model", parts: [{ text: "## \"Ignorance is bliss\"\n- A Latin proverb that means being unaware of something negative can be a source of happiness\n- Often used to justify avoiding difficult truths or responsibilities\n- Can also be interpreted as a warning against seeking knowledge that may bring pain or sorrow" }] },
-    { role: "user", parts: [{ text: "find the derivative of (x-438)/(x^2+23x-7)+x^x" }] },
-    { role: "model", parts: [{ text: "## Derivative\n```latex\n\\[\n\\frac{d}{dx}\\left(\\frac{x - 438}{x^2 + 23x - 7} + x^x\\right) = \\frac{-(x^2+23x-7)-(x-438)(2x+23)}{(x^2+23x-7)^2} + x^x(\\ln(x) + 1)\n\\]\n```" }] },
-    { role: "user", parts: [{ text: "write the double angle formulas" }] },
-    { role: "model", parts: [{ text: "## Double angle formulas\n```latex\n\\[\n\\sin(2\\theta) = 2\\sin(\\theta)\\cos(\\theta)\n\\]\n\\\\\n\\[\n\\cos(2\\theta) = \\cos^2(\\theta) - \\sin^2(\\theta)\n\\]\n\\\\\n\\[\n\\tan(2\\theta) = \\frac{2\\tan(\\theta)}{1 - \\tan^2(\\theta)}\n\\]\n```" }] },
-] : [];
-
+let initMessages = []
 if (!fileExists(`${GLib.get_user_config_dir()}/gemini_history.json`)) {
     Utils.execAsync([`bash`, `-c`, `touch ${GLib.get_user_config_dir()}/gemini_history.json`]).catch(print);
     Utils.writeFile('[ ]', `${GLib.get_user_config_dir()}/gemini_history.json`).catch(print);
@@ -332,42 +318,119 @@ class GeminiService extends Service {
         }
     }
 
-    // New method to support image generation.
-    sendImage(prompt) {
-        // Add the user's image prompt.
-        this._messages.push(new GeminiMessage('user', prompt, false));
-        this.emit('newMsg', this._messages.length - 1);
-        const aiResponse = new GeminiMessage('model', 'processing image...', true, false);
+    // ========================
+    // New Voice Chat Methods
+    // ========================
 
+    // Record audio from the microphone for 5 seconds and save as WAV.
+    async recordVoice() {
+        const tmpFile = `${GLib.get_tmp_dir()}/voice_input.wav`;
+        // Example GStreamer pipeline: capture audio, convert, encode to WAV and save.
+        let pipeline = Gst.parse_launch(`autoaudiosrc ! audioconvert ! audioresample ! wavenc ! filesink location=${tmpFile}`);
+        pipeline.set_state(Gst.State.PLAYING);
+
+        // Record for 5 seconds (adjust as needed).
+        await new Promise(resolve =>
+            GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, () => { resolve(); return GLib.SOURCE_REMOVE; })
+        );
+
+        pipeline.set_state(Gst.State.NULL);
+        return tmpFile;
+    }
+
+    // Play an audio file using GStreamer's playbin.
+    playAudio(filePath) {
+        let player = Gst.ElementFactory.make("playbin", "player");
+        player.set_property("uri", `file://${filePath}`);
+        player.set_state(Gst.State.PLAYING);
+    }
+
+    // Helper to combine array of Uint8Arrays.
+    combineChunks(chunks) {
+        let combined = [];
+        for (let chunk of chunks) {
+            combined = combined.concat(Array.from(chunk));
+        }
+        return new Uint8Array(combined);
+    }
+
+    // Read a binary audio response stream, write to a temp file, then play it.
+    readVoiceResponse(stream, aiResponse) {
+        let chunks = [];
+        const readChunk = () => {
+            stream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (stream, result) => {
+                try {
+                    const bytes = stream.read_bytes_finish(result);
+                    if (bytes.get_size() > 0) {
+                        chunks.push(bytes.toArray());
+                        readChunk();
+                    } else {
+                        // End of stream: combine chunks and write to a temporary file.
+                        let combined = this.combineChunks(chunks);
+                        let tmpAudioFile = `${GLib.get_tmp_dir()}/response_audio.mp3`;
+                        Utils.writeFile(combined, tmpAudioFile);
+                        this.playAudio(tmpAudioFile);
+                        aiResponse.done = true;
+                    }
+                } catch (e) {
+                    aiResponse.done = true;
+                }
+            });
+        };
+        readChunk();
+    }
+
+    // Send a voice message: record, encode audio, and send to Gemini.
+    async sendVoice() {
+        // Record the user's voice.
+        let audioFilePath = await this.recordVoice();
+        let audioDataRaw = Utils.readFile(audioFilePath);
+        let audioBase64 = GLib.base64_encode(audioDataRaw);
+
+        // Build the request body with audio data.
         const body = {
-            // The API may require just a prompt or additional image-specific parameters.
-            "prompt": prompt,
-            "parameters": {
-                "imageSize": "1024x1024" // Example image size – adjust as needed.
-            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {
+                            "audioData": audioBase64,
+                            "inputMediaType": "audio/wav"
+                        }
+                    ]
+                }
+            ],
             "safetySettings": this._safe ? [] : [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
             ],
+            "generationConfig": {
+                "temperature": this._temperature,
+                // Request an audio response.
+                "responseMimeType": "audio/mpeg"
+            },
         };
 
         const proxyResolver = new Gio.SimpleProxyResolver({
             'default-proxy': userOptions.asyncGet().ai.proxyUrl || null
         });
         const session = new Soup.Session({ 'proxy-resolver': proxyResolver });
-        // Use the image generation endpoint.
         const message = new Soup.Message({
             method: 'POST',
-            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1/models/${this.modelName}:generateImage?key=${this._key}`), GLib.UriFlags.NONE),
+            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1/models/${this.modelName}:streamGenerateContent?key=${this._key}`), GLib.UriFlags.NONE),
         });
-        message.request_headers.append('Content-Type', `application/json`);
+        message.request_headers.append('Content-Type', 'application/json');
         message.set_request_body_from_bytes('application/json', new GLib.Bytes(JSON.stringify(body)));
+
+        const aiResponse = new GeminiMessage('model', 'processing voice...', true, false);
+        this._messages.push(aiResponse);
+        this.emit('newMsg', this._messages.length - 1);
 
         session.send_async(message, GLib.DEFAULT_PRIORITY, null, (_, result) => {
             try {
                 const stream = session.send_finish(result);
-                this.readResponse(new Gio.DataInputStream({
+                this.readVoiceResponse(new Gio.DataInputStream({
                     close_base_stream: true,
                     base_stream: stream
                 }), aiResponse);
@@ -376,8 +439,6 @@ class GeminiService extends Service {
                 aiResponse.thinking = false;
             }
         });
-        this._messages.push(aiResponse);
-        this.emit('newMsg', this._messages.length - 1);
     }
 }
 

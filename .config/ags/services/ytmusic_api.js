@@ -1,6 +1,4 @@
-import GLib from 'gi://GLib';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-
 const BASE_URL = 'https://music.youtube.com/youtubei/v1';
 const CLIENT = {
     clientName: 'WEB_REMIX',

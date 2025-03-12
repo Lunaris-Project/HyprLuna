@@ -56,8 +56,8 @@ globalThis['handleStyles'] = () => {
 // Start stuff
 handleStyles();
 startBatteryWarningService().catch(print);
-// startAutoDarkModeService().catch(print);
-// firstRunWelcome().catch(print);
+startAutoDarkModeService().catch(print);
+firstRunWelcome().catch(print);
 
 // Create bars and corners
 const monitors = Gdk.Display.get_default()?.get_n_monitors() || 1;
@@ -97,13 +97,12 @@ let Modules = () => [
         ]
     : []),
     SideLeft(),
-    MusicWindow(),
-    Recorder(),
+    // MusicWindow(),
+    // Recorder(),
     SideRight(),
-    Glance(),
+    // Glance(),
   ];
 
-  // Load Compiled Styles
   App.config({
     css: `${COMPILED_STYLE_DIR}/style.css`,
     stackTraceOnError: true,

@@ -8,7 +8,7 @@ import { TimerWidget } from "./timers.js";
 import { TodoWidget } from "./todolist.js";
 import { getCalendarLayout } from "./calendar_layout.js";
 import AudioFiles from "./media.js";
-import { PrayerTimesWidget } from "./prayertimes.js";
+import { PrayerTimesWidget } from "../prayertimes.js";
 // Кэшируем часто используемые значения
 let calendarJson = getCalendarLayout(undefined, true);
 let monthshift = 0;
@@ -24,7 +24,6 @@ function getDateInXMonthsTime(x) {
   return new Date(targetYear, targetMonth, 1);
 }
 
-// Предварительно определенные дни недели с проверкой текущего дня
 const weekDays = (() => {
   const currentDay = new Date().getDay(); // 0 = воскресенье, 1 = понедельник, и т.д.
   const adjustedCurrentDay = currentDay === 0 ? 6 : currentDay - 1; // Корректируем для нашего формата (пн=0, вс=6)
@@ -167,7 +166,7 @@ const defaultShown = userOpts.muslim?.enabled ? "PrayerTimes" : "calendar";
 const contentStack = Widget.Stack({
   hexpand: true,
   vexpand: false,
-  homogeneous:true,
+  homogeneous: true,
   children: {
     ...(userOpts.muslim?.enabled ? { PrayerTimes: PrayerTimesWidget() } : {}),
     calendar: CalendarWidget(),
@@ -224,10 +223,9 @@ const StackButton = (stackItemName, icon, name) =>
       }),
   });
 
-export const ModuleCalendar = (props = {}) =>
+export const ModuleCalendar = () =>
   Box({
     hexpand: true,
-    css: `margin-top:1rem`,
     className: "sidebar-group spacing-h-5",
     setup: (box) => {
       box.pack_start(
@@ -235,12 +233,9 @@ export const ModuleCalendar = (props = {}) =>
           vpack: "center",
           // hexpand: true,
           vertical: true,
-          hpack: "fill",
           className: "sidebar-navrail spacing-v-10",
           children: [
-            ...(userOpts.muslim?.enabled
-              ? [StackButton("PrayerTimes", "mosque", getString("Prayers"))]
-              : []),
+            ...(userOpts.muslim?.enabled ? [StackButton("PrayerTimes", "mosque", getString("Prayers"))] : []),
             StackButton("calendar", "calendar_month", getString("Calendar")),
             StackButton("todo", "done_outline", getString("To Do")),
             StackButton("media", "music_note", getString("Media")),

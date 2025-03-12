@@ -29,10 +29,6 @@ $rounding_large: 1.705rem;
     -gtk-outline-radius: 9999px;
 }
 
-// @mixin symbolic-icon {
-//    -gtk-icon-theme: 'Adwaita';
-// }
-
 @mixin titlefont {
     // Geometric sans-serif
     font-family: "Gabarito", "Poppins", "Readex Pro", "Lexend", sans-serif;
@@ -96,6 +92,17 @@ $elevation_margin: 0.476rem;
 @mixin elevation3 {
     box-shadow: 0px 2px 5px $shadow;
     margin: $elevation_margin;
+}
+
+@mixin shadows1 {
+    box-shadow:
+        0 2px 3px rgba(0, 0, 0, 0.1),
+        /* Lighter, broader blur for depth */
+        0 5px 10px rgba(0, 0, 0, 0.08),
+        /* Lighter, broader blur for depth */
+        0 10px 20px rgba(0, 0, 0, 0.2),
+        /* Subtle mid-distance shadow */
+
 }
 
 @mixin menu_decel {

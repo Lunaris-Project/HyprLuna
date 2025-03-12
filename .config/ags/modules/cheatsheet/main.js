@@ -105,7 +105,8 @@ export default (id) => {
     return PopupWindow({
         monitor: id,
         name: `cheatsheet${id}`,
-        layer: 'top',
+        exclusivity:'ignore',
+        layer: 'overlay',
         keymode: 'on-demand',
         visible: false,
         anchor: ['top', 'bottom', 'left', 'right'],

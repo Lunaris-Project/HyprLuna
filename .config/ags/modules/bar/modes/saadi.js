@@ -9,8 +9,8 @@ import NormalOptionalWorkspaces from "../normal/workspaces_hyprland.js";
 import SystemResources from "../normal/resources.js";
 import BatteryScaleModule from "../modules/battery_scale.js";
 import scrolledmodule from "../../.commonwidgets/scrolledmodule.js";
-
 const Box = Widget.Box;
+
 const Power = Widget.Button({
   child: Widget.Label({
     label: "power_settings_new",
@@ -22,7 +22,7 @@ const Power = Widget.Button({
 });
 export const SaadiBar = Widget.CenterBox({
   className: "bar-saadi",
-  css: `padding:0.2rem 2rem`,
+  css: `padding:0 2rem`,
   startWidget: Widget.Box({
     className: "spacing-h-4",
     children: [
@@ -44,7 +44,7 @@ export const SaadiBar = Widget.CenterBox({
       }),
       Box({
         className: "group-saadi",
-        css:`padding: 0.1rem 0.2rem 0.1rem 0`,
+        css:`padding-left: 0`,
         children: [
           BatteryScaleModule()
         ]

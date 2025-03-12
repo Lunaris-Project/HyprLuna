@@ -1,21 +1,20 @@
 const { Gtk, GLib } = imports.gi;
-import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-const { EventBox, Button } = Widget;
+const { EventBox} = Widget;
 import { RoundedCorner } from './../.commonwidgets/cairo_roundedcorner.js';
 import Hyprland from 'resource:///com/github/Aylur/ags/service/hyprland.js';
 import Applications from 'resource:///com/github/Aylur/ags/service/applications.js';
-const { execAsync, exec } = Utils;
 const { Box, Revealer } = Widget;
 import { setupCursorHover } from '../.widgetutils/cursorhover.js';
-import { getAllFiles, searchIcons } from './icons.js'
-import { MaterialIcon } from '../.commonwidgets/materialicon.js';
+import { getAllFiles } from './icons.js'
 import { substitute } from '../.miscutils/icons.js';
 import { getValidIcon } from '../.miscutils/icon_handling.js';
 
 const icon_files = userOptions.asyncGet().icons.searchPaths.map(e => getAllFiles(e)).flat(1)
-let appSize = userOptions.asyncGet().dock.appSize || 36
+let dockSize = userOptions.asyncGet().dock.dockSize 
+let elevate = userOptions.asyncGet().etc.widgetCorners ? "dock-bg dock-round " : "elevation dock-bg" 
+let appSpacing = dockSize / 15
 let isPinned = false
 let cachePath = new Map()
 
@@ -51,20 +50,18 @@ const DockSeparator = (props = {}) => Box({
 })
 
 const PinButton = () => Widget.Button({
-    className: 'dock-app-btn dock-app-btn-animate',
     tooltipText: 'Pin Dock',
-    css:`margin:0 0.75rem`,
+    css: `margin: 0 ${appSpacing}px;padding: 0 10px`,
     child: Widget.Box({
         homogeneous: true,
-        className: 'dock-app-icon txt',
         child: Widget.Icon({
             icon:"logo-symbolic",
-            size:appSize
+            size:dockSize
         })
     }),
     onClicked: (self) => {
         isPinned = !isPinned
-        self.className = `${isPinned ? "pinned-dock-app-btn" : "dock-app-btn animate"} dock-app-btn-animate`
+        self.className = `${isPinned ? "pinned-dock-app-btn dock-app-btn-animate" : "unpinned-dock-app-btn dock-app-btn-animate"}`
     },
     setup: setupCursorHover,
 })
@@ -79,6 +76,7 @@ const AppButton = ({ icon, ...rest }) => Widget.Revealer({
     child: Widget.Button({
         ...rest,
         className: 'dock-app-btn dock-app-btn-animate',
+        css: `margin: 0 ${appSpacing}px`,
         child: Widget.Box({
             child: Widget.Overlay({
                 child: Widget.Box({
@@ -86,7 +84,7 @@ const AppButton = ({ icon, ...rest }) => Widget.Revealer({
                     className: 'dock-app-icon',
                     child: Widget.Icon({
                         icon: icon,
-                        size:appSize
+                        size:dockSize
                     }),
                 }),
                 overlays: [Widget.Box({
@@ -207,13 +205,13 @@ const PinnedApps = () => Widget.Box({
             return newButton;
         }),
 });
-const elevate = userOptions.asyncGet().etc.widgetCorners ? "dock-bg dock-round " : "elevation dock-bg" ;
 export default (monitor = 0) => {
     const dockContent = Box({
         children:[
             userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('bottomright', {vpack:"end",className: 'corner corner-colorscheme'}) : null,
             Box({
                 className: `${elevate}`,
+                css:`padding:${dockSize / 85}rem`,
                 children:[
                     PinButton(),
                     PinnedApps(),

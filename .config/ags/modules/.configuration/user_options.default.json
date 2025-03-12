@@ -11,7 +11,7 @@
   "wallselect": {
     "enabled": true,
     "wallpaperFolder": "/Pictures/Wallpapers",
-    "cachingMode": "disk",
+    "showPicker": true,
     "width": 200,
     "height": 110,
     "radius": 20,
@@ -21,7 +21,10 @@
     "enabled": true
   },
   "desktopBackground": {
+    "CurrentMode": "Normal",
     "enabled": true,
+    "enableWisecat": false,
+    "zoomEffect": true,
     "resources": true,
     "visible": false
   },
@@ -31,7 +34,7 @@
     "defaultTemperature": 0.9,
     "enhancements": true,
     "useHistory": true,
-    "useInitMessages":true,
+    "useInitMessages": true,
     "safety": true,
     "writingCursor": " ...",
     "proxyUrl": "",
@@ -40,9 +43,10 @@
     ]
   },
   "animations": {
-    "choreographyDelay": 10,
+    "choreographyDelay": 50,
     "durationSmall": 80,
-    "durationLarge": 200
+    "durationLarge": 200,
+    "durationHuge": 400
   },
   "appearance": {
     "autoDarkMode": {
@@ -65,7 +69,8 @@
     "network": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center wifi",
     "settings": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center",
     "taskManager": "kitty btop",
-    "terminal": "kitty"
+    "terminal": "kitty",
+    "editor": "code"
   },
   "battery": {
     "low": 20,
@@ -111,7 +116,7 @@
   },
   "overview": {
     "enabled": true,
-    "useNameInPrompt" : false,
+    "useNameInPrompt": false,
     "spotlightTheme": true,
     "scale": 0.18,
     "numOfRows": 2,
@@ -120,7 +125,7 @@
   },
   "sidebar": {
     "extraCss": "min-width:450px",
-    "siderightTheme":"sideright_bottom",
+    "siderightTheme": "sideright_bottom",
     "ModuleCalendar": {
       "enabled": true,
       "visible": false
@@ -168,8 +173,8 @@
       "repoName": "HyprNoon"
     },
     "ai": {
-      "medicalDictionary":{
-        "apiKey":""
+      "medicalDictionary": {
+        "apiKey": ""
       },
       "logo": "deepseek-symbolic",
       "__custom": [
@@ -202,6 +207,15 @@
           "key_get_url": "https://discord.com/invite/kM6MaCqGKA",
           "key_file": "oxygen_key.txt",
           "model": "gpt-4o"
+        },
+        "chatGPT": {
+          "name": "OpenAI (GPT-3.5)",
+          "logo_name": "ai-openai-symbolic",
+          "description": "An API from OpenAI')",
+          "base_url": "https://app.oxyapi.uk/v1/chat/completions",
+          "key_get_url": "https://discord.com/invite/kM6MaCqGKA",
+          "key_file": "openai_key.txt",
+          "model": "gpt-3.5"
         },
         "microsoft-phi-4": {
           "name": "microsoft/phi-4",
@@ -288,10 +302,10 @@
     "dateInterval": 5000,
     "dateFormat": "%d/%m",
     "verticalCLock": {
-      "hours": "%I",
-      "minutes": "%M",
-      "seconds": "%S",
-      "dayTime": "%p"
+      "showHours": true,
+      "showMinutes": true,
+      "showSeconds": false,
+      "showDayTime": false
     }
   },
   "weather": {
@@ -305,7 +319,7 @@
   "dock": {
     "enabled": true,
     "hiddenThickness": 7,
-    "appSize": 36,
+    "dockSize": 36,
     "pinnedApps": [
       "zen-browser",
       "spotube",
@@ -317,7 +331,8 @@
       "Obisidian",
       "steam",
       "heroic-games-launcher",
-      "org.gnome.Nautilus"
+      "org.gnome.Nautilus",
+      "bottles"
     ],
     "layer": "top",
     "monitorExclusivity": true,
@@ -431,11 +446,13 @@
     }
   },
   "etc": {
-    "cava":{
-      "enabled":true
+    "cava": {
+      "enabled": true
     },
-    "enableAmberol":false,
-    "clickCloseRegion": false,
+    "enableAmberol": false,
+    "nightLightTemp": "6000",
+    "clickCloseRegion": true,
+    "sideLeftPin": true,
     "cornerRadius": "20",
     "widgetCorners": true,
     "todoPath": "/mnt/Data/General-Archive/obsidian/HyprNoon.md",

@@ -13,37 +13,24 @@ import { VerticalBarPinned } from "./modes/verticalPinned.js";
 import { IslandBar } from "./modes/macLike.js";
 import { NotchBar } from "./modes/notch.js";
 import { SaadiBar } from "./modes/saadi.js";
-// Mode configuration:
-const horizontalModes = new Map([
-  // Normal bar with corners
-  ["0", [NormalBar, true, "Normal"]],
-  // Focus mode with corners
-  ["1", [FocusBar, true, "Focus"]],
-  // Floating bar without corners
-  ["2", [FloatingBar, false, "Floating"]],
-  // Minimal bar with corners
-  ["3", [MinimalBar, true, "Minimal"]],
-  // Anoon mode without corners
-  ["4", [AnoonBar, false, "Anoon"]],
-  // Windows Taskbar mode without corners
-  ["5", [WindowsTaskbar, false, "Windows Taskbar"]],
-  // Mac-like mode without corners
-  ["6", [IslandBar, false, "Dynamic"]],
-  // Notch mode without corners
-  ["7", [NotchBar, false, "Notch"]],
-  // Saadi mode with corners
-  ["8", [SaadiBar, true, "Saadi"]],
 
+const horizontalModes = new Map([
+  ["0", [await NormalBar, true, "Normal"]],
+  ["1", [await FocusBar, true, "Focus"]],
+  ["2", [await FloatingBar, false, "Floating"]],
+  ["3", [await MinimalBar, true, "Minimal"]],
+  ["4", [await AnoonBar, false, "Anoon"]],
+  ["5", [await WindowsTaskbar, false, "Windows Taskbar"]],
+  ["6", [await IslandBar, false, "Dynamic"]],
+  ["7", [await NotchBar, false, "Notch"]],
+  ["8", [await SaadiBar, true, "Saadi"]],
 ]);
 
 const verticalModes = new Map([
-   // Floating Vertical bar
-  ["9", [VerticalBar, false, "Vertical Bar"]],
-   // Pinned Corners Vertical bar
-  ["10", [VerticalBarPinned, true, "Vertical Bar Pinned"]],
+  ["9", [await VerticalBar, false, "Vertical Bar"]],
+  ["10", [await VerticalBarPinned, true, "Vertical Bar Pinned"]],
 ]);
 
-// Combined modes for easy lookup
 const modes = new Map([...horizontalModes, ...verticalModes]);
 
 const shouldShowCorners = (monitor) => {
@@ -54,7 +41,6 @@ const shouldShowCorners = (monitor) => {
 
 const getValidPosition = (mode, currentPos) => {
   const isVerticalMode = verticalModes.has(mode);
-  
   if (isVerticalMode) {
     return (currentPos === 'left' || currentPos === 'right') ? currentPos : 'left';
   } else {
@@ -65,7 +51,7 @@ const getValidPosition = (mode, currentPos) => {
 const createCorner = (monitor, side) => {
   const getCornerStyle = (pos, isVert) => {
     if (isVert) {
-      return pos === "left" 
+      return pos === "left"
         ? side === "left" ? "topleft" : "bottomleft"
         : side === "left" ? "topright" : "bottomright";
     }
@@ -95,7 +81,6 @@ const createCorner = (monitor, side) => {
     ),
     setup: (self) => {
       enableClickthrough(self);
-      
       const updateCorner = () => {
         const mode = currentShellMode.value[monitor] || "1";
         const pos = getValidPosition(mode, barPosition.value);
@@ -110,7 +95,6 @@ const createCorner = (monitor, side) => {
         }
         self.visible = shouldShow;
       };
-      
       self.hook(currentShellMode, updateCorner);
       self.hook(barPosition, updateCorner);
     },
@@ -122,12 +106,12 @@ const createCorner = (monitor, side) => {
 const getAnchor = (monitor, mode) => {
   const currentPos = barPosition.value;
   const position = getValidPosition(mode, currentPos);
-  
+
   if (position !== currentPos) {
     barPosition.value = position;
   }
-  
-  return verticalModes.has(mode) 
+
+  return verticalModes.has(mode)
     ? [position, "top", "bottom"]
     : [position, "left", "right"];
 };

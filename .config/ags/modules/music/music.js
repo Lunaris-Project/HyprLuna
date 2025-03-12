@@ -4,22 +4,13 @@ import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 import Mpris from 'resource:///com/github/Aylur/ags/service/mpris.js';
-const { exec, execAsync } = Utils;
-const { Box, EventBox, Icon, Scrollable, Label, Button, Revealer } = Widget;
-import { RoundedCorner } from '../.commonwidgets/cairo_roundedcorner.js';
-import { fileExists } from '../.miscutils/files.js';
-import { bluetoothPill } from '../.commonwidgets/statusicons.js';
+const { Box, Icon, Label, Button, } = Widget;
 import { AnimatedCircProg } from "../.commonwidgets/cairo_circularprogress.js";
-import { darkMode, hasPlasmaIntegration } from '../.miscutils/system.js';
+import {  hasPlasmaIntegration } from '../.miscutils/system.js';
 import CavaService from '../../services/cava.js';
 import clickCloseRegion from '../.commonwidgets/clickcloseregion.js';
-const COMPILED_STYLE_DIR = `${GLib.get_user_cache_dir()}/ags/user/generated`
-const LIGHTDARK_FILE_LOCATION = `${GLib.get_user_state_dir()}/ags/user/colormode.txt`;
-const colorMode = Utils.exec(`bash -c "sed -n '1p' '${LIGHTDARK_FILE_LOCATION}'"`);
-const lightDark = (colorMode == "light") ? '-l' : '';
-const COVER_COLORSCHEME_SUFFIX = '_colorscheme.css';
-const elevate = userOptions.asyncGet().etc.widgetCorners ? "osd-round osd-music " : "elevation elevate-music osd-music" ;
-const mode = userOptions.asyncGet().etc.enableAmberol ? "amberoled " : "normal-music" ;
+const elevate = userOptions.asyncGet().etc.widgetCorners ? "osd-round osd-music " : "osd-music elevation elevate-music " ;
+const mode = userOptions.asyncGet().etc.enableAmberol ? "amberoled " : "" ;
 
 var lastCoverPath = '';
 
@@ -584,6 +575,7 @@ const CavaVisualizer = () => {
 const musicWidget = () => {
     let currentPlayer = getPlayer();
     return Box({
+        // className:`normal-music`,
         className: ` ${mode} `+` ${elevate} `,
         css: `min-height:260px;`,
         vexpand: true,

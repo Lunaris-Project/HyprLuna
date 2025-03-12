@@ -1,10 +1,10 @@
 const { GLib, Gio } = imports.gi;
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-const { Box, Label, Scrollable} = Widget;
+const { Box, Label, Scrollable } = Widget;
 const { execAsync, exec } = Utils;
-import { ConfigGap, ConfigSpinButton,ConfigSeparator, ConfigToggle } from '../../.commonwidgets/configwidgets.js';
-import { initBorder, initBorderVal, initTransparencyVal,initVibrancy,initVibrancyVal,initTransparency, initScheme, initSchemeIndex, initGowall, initGowallIndex } from '../../indicators/colorscheme.js';
+import { ConfigGap, ConfigSpinButton, ConfigSeparator, ConfigToggle } from '../../.commonwidgets/configwidgets.js';
+import { initBorder, initBorderVal, initTransparencyVal, initVibrancy, initVibrancyVal, initTransparency, initScheme, initSchemeIndex, initGowall, initGowallIndex, initTransparencyModeVal } from '../../indicators/colorscheme.js';
 
 const HyprlandToggle = ({ icon, name, desc = null, option, enableValue = 1, disableValue = 0, extraOnChange = () => { } }) => ConfigToggle({
     icon: icon,
@@ -31,35 +31,37 @@ const HyprlandSpinButton = ({ icon, name, desc = null, option, ...rest }) => Con
 const Subcategory = (children) => Box({
     className: 'margin-left-20',
     vertical: true,
-    children: children,
-})
+    children
+});
+
+const ConfigSection = ({ name, children }) => Box({
+    vertical: true,
+    className: 'spacing-v-5',
+    children: [
+        Label({
+            hpack: 'center',
+            className: 'txt txt-large margin-left-10',
+            label: name,
+        }),
+        Box({
+            className: 'margin-left-10 margin-right-10',
+            vertical: true,
+            children,
+        })
+    ]
+});
 
 export default (props) => {
-    const ConfigSection = ({ name, children }) => Box({
-        vertical: true,
-        className: 'spacing-v-5',
-        children: [
-            Label({
-                hpack: 'center',
-                className: 'txt txt-large margin-left-10',
-                label: name,
-            }),
-            Box({
-                className: 'margin-left-10 margin-right-10',
-                vertical: true,
-                children: children,
-            })
-        ]
-    })
     const mainContent = Scrollable({
         vexpand: true,
         child: Box({
             vertical: true,
-            css:`margin-top:2rem`,
+            css: `margin-top:2rem`,
             className: 'spacing-v-10',
             children: [
                 ConfigSection({
-                    name: getString('Effects'), children: [
+                    name: getString('Effects'),
+                    children: [
                         ConfigToggle({
                             icon: 'dark_mode',
                             name: getString('Dark Mode'),
@@ -103,47 +105,50 @@ export default (props) => {
                             },
                         }),
                         ConfigToggle({
+                            icon: 'border_clear',
+                            name: getString('Glass Transparency'),
+                            desc: getString('intense transparent mode'),
+                            initValue: initTransparencyModeVal,
+                            onChange: async (self, newValue) => {
+                                try {
+                                    const transparencyMode = newValue == 0 ? "normal" : "intense";
+                                    await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "7s/.*/${transparencyMode}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
+                                    await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                                } catch (error) {
+                                    console.error('Error changing transparency:', error);
+                                }
+                            },
+                        }),
+                        ConfigToggle({
                             icon: 'ripples',
                             name: getString('Borders'),
                             desc: getString('Make Everything Bordered'),
                             initValue: initBorderVal,
                             onChange: async (self, newValue) => {
-                            try {
-                                               const border = newValue == 0 ? "noborder" : "border";
-                                               await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "5s/.*/${border}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                                               await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
-                            } catch (error) {
-                                               console.error('Error changing border mode:', error);
-                                           }
+                                try {
+                                    const border = newValue == 0 ? "noborder" : "border";
+                                    await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "5s/.*/${border}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
+                                    await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                                } catch (error) {
+                                    console.error('Error changing border mode:', error);
+                                }
                             },
-                            }),
-                        // ConfigToggle({
-                        //     icon: 'image',
-                        //     name: getString('GoWall'),
-                        //     desc: getString('Theme Wallpaper for ColorPalette'),
-                        //     initValue: exec(`bash -c "sed -n \'4p\' ${GLib.get_user_state_dir()}/ags/user/colormode.txt"`) != "none",
-                        //     onChange: (self, newValue) => {
-                        //         const gowall = newValue == 0 ? "none" : "catppuccin";
-                        //         console.log(gowall);
-                        //         execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "4s/.*/${gowall}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`])
-                        //             .then(execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/switchcolor.sh --switch`]))
-                        //             .catch(print);
-                        //     },
-                        // }),
-                            ConfigSpinButton({
-                                icon: 'clear_all',
-                                name: getString('Choreography delay'),
-                                desc: getString('In milliseconds, the delay between animations of a series'),
-                                initValue: userOptions.asyncGet().animations.choreographyDelay,
-                                step: 10, minValue: 0, maxValue: 1000,
-                                onChange: (self, newValue) => {
-                                    userOptions.asyncGet().animations.choreographyDelay = newValue
-                                },
-                            }),
-                            ConfigSeparator(),
+                        }),
+                        ConfigSpinButton({
+                            icon: 'clear_all',
+                            name: getString('Choreography delay'),
+                            desc: getString('In milliseconds, the delay between animations of a series'),
+                            initValue: userOptions.asyncGet().animations.choreographyDelay,
+                            step: 10, minValue: 0, maxValue: 1000,
+                            onChange: (self, newValue) => {
+                                userOptions.asyncGet().animations.choreographyDelay = newValue
+                            },
+                        }),
+                        ConfigSeparator(),
 
                         ConfigSection({
-                            name: getString('Hyprland'), children: [
+                            name: getString('Hyprland'),
+                            children: [
                                 HyprlandToggle({ icon: 'blur_on', name: getString('Blur'), desc: getString("[Hyprland]\nEnable blur on transparent elements\nDoesn't affect performance/power consumption unless you have transparent windows."), option: "decoration:blur:enabled" }),
                                 Subcategory([
                                     HyprlandToggle({ icon: 'stack_off', name: getString('X-ray'), desc: getString("[Hyprland]\nMake everything behind a window/layer except the wallpaper not rendered on its blurred surface\nRecommended to improve performance (if you don't abuse transparency/blur) "), option: "decoration:blur:xray" }),
@@ -153,9 +158,9 @@ export default (props) => {
                                         icon: 'animation', name: getString('Animations'), desc: getString('[Hyprland] [GTK]\nEnable animations'), option: 'animations:enabled',
                                         extraOnChange: (self, newValue) => execAsync(['gsettings', 'set', 'org.gnome.desktop.interface', 'enable-animations', `${newValue}`])
                                     }),
-            
+
                                 ]),
-        
+
                             ]
                         }),
                     ]

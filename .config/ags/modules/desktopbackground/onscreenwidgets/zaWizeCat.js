@@ -1,7 +1,7 @@
 import Widget from "resource:///com/github/Aylur/ags/widget.js";
-import QuoteWidget from ".././bar/modules/quote.js";
+import QuoteWidget from "../../bar/modules/quote.js";
 
-const zaWiseCat = Widget.Box({
+export const zaWiseCat = Widget.Box({
   vpack:"start",
   children: [
     Widget.Box({child:QuoteWidget(),vpack:"center"}),

@@ -25,7 +25,7 @@ const ColorBox = ({
 const ColorSchemeSettingsRevealer = () => {
     const headerButtonIcon = MaterialIcon('expand_more', 'norm');
     const header = Widget.Button({
-        hpack:'center',
+        hpack: 'center',
         className: 'osd-settings-btn-arrow',
         onClicked: () => {
             content.revealChild = !content.revealChild;
@@ -34,7 +34,7 @@ const ColorSchemeSettingsRevealer = () => {
         setup: setupCursorHover,
         child: headerButtonIcon,
     });
-    
+
     const content = Widget.Revealer({
         revealChild: false,
         transition: 'slide_down',
@@ -101,13 +101,16 @@ const schemeOptionsArr = [
         { name: getString('Expressive'), value: 'scheme-expressive' },
         { name: getString('Content'), value: 'scheme-content' },
     ]
-   
+
 ];
 
 export const LIGHTDARK_FILE_LOCATION = `${GLib.get_user_state_dir()}/ags/user/colormode.txt`;
 
 export const initTransparency = Utils.exec(`bash -c "sed -n \'2p\' ${LIGHTDARK_FILE_LOCATION}"`);
 export const initTransparencyVal = (initTransparency == "transparent") ? 1 : 0;
+
+export const initTransparencyMode = Utils.exec(`bash -c "sed -n \'7p\' ${LIGHTDARK_FILE_LOCATION}"`);
+export const initTransparencyModeVal = (initTransparencyMode == "intense") ? 1 : 0;
 
 export const initScheme = Utils.exec(`bash -c "sed -n \'3p\' ${LIGHTDARK_FILE_LOCATION}"`);
 export const initSchemeIndex = calculateSchemeInitIndex(schemeOptionsArr, initScheme);
@@ -119,11 +122,11 @@ export const initBorder = Utils.exec(`bash -c "sed -n \'5p\' ${LIGHTDARK_FILE_LO
 export const initBorderVal = (initBorder == "border") ? 1 : 0;
 
 export const initVibrancy = Utils.exec(`bash -c "sed -n \'6p\' ${LIGHTDARK_FILE_LOCATION}"`);
-export const initVibrancyVal = (initTransparency == "vibrant") ? 1 : 0;
+export const initVibrancyVal = (initVibrancy == "vibrant") ? 1 : 0;
 
 const ColorSchemeSettings = () => Widget.Box({
     className: 'osd-colorscheme-settings spacing-v-5 margin-20',
-    css:`padding:0 2rem `,
+    css: `padding:0 2rem `,
     vertical: true,
     vpack: 'center',
     children: [
@@ -180,20 +183,35 @@ const ColorSchemeSettings = () => Widget.Box({
                     },
                 }),
                 ConfigToggle({
+                    icon: 'border_clear',
+                    name: getString('Glass Transparency'),
+                    desc: getString('intense transparent mode'),
+                    initValue: initTransparencyModeVal,
+                    onChange: async (self, newValue) => {
+                        try {
+                            const transparencyMode = newValue == 0 ? "normal" : "intense";
+                            await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "7s/.*/${transparencyMode}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
+                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                        } catch (error) {
+                            console.error('Error changing transparency:', error);
+                        }
+                    },
+                }),
+                ConfigToggle({
                     icon: 'ripples',
                     name: getString('Borders'),
                     desc: getString('Make Everything Bordered'),
                     initValue: initBorderVal,
                     onChange: async (self, newValue) => {
-                    try {
-                                       const border = newValue == 0 ? "noborder" : "border";
-                                       await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "5s/.*/${border}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                                       await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
-                    } catch (error) {
-                                       console.error('Error changing border mode:', error);
-                                   }
+                        try {
+                            const border = newValue == 0 ? "noborder" : "border";
+                            await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "5s/.*/${border}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
+                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                        } catch (error) {
+                            console.error('Error changing border mode:', error);
+                        }
                     },
-                    }),
+                }),
             ]
         }),
         Widget.Box({
@@ -213,9 +231,9 @@ const ColorSchemeSettings = () => Widget.Box({
                     optionsArr: schemeOptionsArr,
                     initIndex: initSchemeIndex,
                     onChange: async (value, name) => {
-                        await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "3s/.*/${value}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                        await execAsync([`bash`, `-c`, `${App.configDir}/scripts/color_generation/colorgen.sh`]).catch(print);
-},
+                        await execAsync([`bash`, `-c`, `sed -i "3s/.*/${value}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]),
+                            runMatugen()
+                    },
                 }),
                 Widget.Label({
                     xalign: 0,
@@ -226,7 +244,7 @@ const ColorSchemeSettings = () => Widget.Box({
                 ConfigMulipleSelection({
                     hpack: 'center',
                     vpack: 'center',
-                    css:`margin-bottom:1.5rem`,
+                    css: `margin-bottom:1.5rem`,
                     optionsArr: gowallArr,
                     initIndex: initGowallIndex,
                     onChange: async (value, name) => {
@@ -245,47 +263,47 @@ const topLeftCorner = RoundedCorner('topleft', {
 const topRightCorner = RoundedCorner('topright', {
     className: 'corner corner-colorscheme'
 })
-const ColorschemeContent = () => 
+const ColorschemeContent = () =>
     Widget.Box({
         children: [
             Widget.Box({
-            className: 'osd-colorscheme osd-round spacing-v-5',
-            vertical: true,
-            hpack: 'center',
-            children: [
-                Widget.Label({
-                    xalign: 0,
-                    css:`padding:0.26rem 0`,
-                    className: 'txt-large titlefont txt',
-                    label: getString('Appearence'),
-                    hpack: 'center',
-                }),
-                Widget.Box({
-                    className: 'spacing-h-5',
-                    hpack: 'center',
-                    children: [
-                        ColorBox({ name: 'P', className: 'osd-color osd-color-primary' }),
-                        ColorBox({ name: 'S', className: 'osd-color osd-color-secondary' }),
-                        ColorBox({ name: 'T', className: 'osd-color osd-color-tertiary' }),
-                        ColorBox({ name: 'Sf', className: 'osd-color osd-color-surface' }),
-                        ColorBox({ name: 'Sf-i', className: 'osd-color osd-color-inverseSurface' }),
-                        ColorBox({ name: 'E', className: 'osd-color osd-color-error' }),
-                        ColorBox({ name: 'P-c', className: 'osd-color osd-color-primaryContainer' }),
-                        ColorBox({ name: 'S-c', className: 'osd-color osd-color-secondaryContainer' }),
-                        ColorBox({ name: 'T-c', className: 'osd-color osd-color-tertiaryContainer' }),
-                        ColorBox({ name: 'Sf-c', className: 'osd-color osd-color-surfaceContainer' }),
-                        ColorBox({ name: 'Sf-v', className: 'osd-color osd-color-surfaceVariant' }),
-                        ColorBox({ name: 'E-c', className: 'osd-color osd-color-errorContainer' }),
-                    ]
-                }),
-                ColorSchemeSettingsRevealer(),
-            ]
-        }),
-    ]
+                className: 'osd-colorscheme osd-round spacing-v-5',
+                vertical: true,
+                hpack: 'center',
+                children: [
+                    Widget.Label({
+                        xalign: 0,
+                        css: `padding:0.26rem 0`,
+                        className: 'txt-large titlefont txt',
+                        label: getString('Appearence'),
+                        hpack: 'center',
+                    }),
+                    Widget.Box({
+                        className: 'spacing-h-5',
+                        hpack: 'center',
+                        children: [
+                            ColorBox({ name: 'P', className: 'osd-color osd-color-primary' }),
+                            ColorBox({ name: 'S', className: 'osd-color osd-color-secondary' }),
+                            ColorBox({ name: 'T', className: 'osd-color osd-color-tertiary' }),
+                            ColorBox({ name: 'Sf', className: 'osd-color osd-color-surface' }),
+                            ColorBox({ name: 'Sf-i', className: 'osd-color osd-color-inverseSurface' }),
+                            ColorBox({ name: 'E', className: 'osd-color osd-color-error' }),
+                            ColorBox({ name: 'P-c', className: 'osd-color osd-color-primaryContainer' }),
+                            ColorBox({ name: 'S-c', className: 'osd-color osd-color-secondaryContainer' }),
+                            ColorBox({ name: 'T-c', className: 'osd-color osd-color-tertiaryContainer' }),
+                            ColorBox({ name: 'Sf-c', className: 'osd-color osd-color-surfaceContainer' }),
+                            ColorBox({ name: 'Sf-v', className: 'osd-color osd-color-surfaceVariant' }),
+                            ColorBox({ name: 'E-c', className: 'osd-color osd-color-errorContainer' }),
+                        ]
+                    }),
+                    ColorSchemeSettingsRevealer(),
+                ]
+            }),
+        ]
     })
 const BorderedColorSchemeContent = () => Widget.Box({
     className: 'bordered-corner-colorscheme ',
-    children:[ 
+    children: [
         topRightCorner,
         ColorschemeContent(),
         topLeftCorner,

@@ -23,17 +23,20 @@
 @import "./notifications";
 @import "./wallpaper";
 @import "./music";
+@import "./auvaDesktop";
 
 // Classes for interaction
 .growingRadial {
     transition: 300ms cubic-bezier(0.2, 0, 0, 1);
 }
+
 .fadingRadial {
     transition: 50ms cubic-bezier(0.2, 0, 0, 1);
 }
+
 .sidebar-pinned {
-    margin: 0rem;
-    border-radius: 0rem;
-    border-bottom-right-radius: $rounding_large;
-    border: 0rem solid;
+    font-size: medium;
+    margin-right: 0rem;
+    min-width: 400px;
+    border: 0 solid #000;
 }
