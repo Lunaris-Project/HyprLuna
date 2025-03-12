@@ -1,5 +1,5 @@
 EnableImagePreviewing: false
-OutputFolder: "/.local/state/ags/user/"
+OutputFolder: "/.local/state/ags/user/gowall"
 themes:
   - name: "monochrome"
     colors:
