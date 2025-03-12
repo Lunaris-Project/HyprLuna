@@ -1,0 +1,102 @@
+// Add styles for the new WiFi network action buttons
+.sidebar-wifinetworks-expand-button {
+    min-width: 30px;
+    min-height: 30px;
+    border-radius: 15px;
+    background-color: transparentize($surface, 0.7);
+    
+    &:hover {
+        background-color: transparentize($surface, 0.5);
+    }
+}
+
+.wifi-password-container {
+    background-color: transparentize($surface, 0.7);
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    border: 2px solid transparentize($primary, 0.5);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: highlight-pulse 2s ease-in-out 1;
+}
+
+@keyframes highlight-pulse {
+    0% {
+        box-shadow: 0 0 5px 2px transparentize($primary, 0.7);
+    }
+    50% {
+        box-shadow: 0 0 15px 5px transparentize($primary, 0.5);
+    }
+    100% {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+}
+
+.sidebar-wifinetworks-action-button {
+    border-radius: 8px;
+    padding: 8px;
+    background-color: transparentize($surface, 0.7);
+    
+    &:hover {
+        background-color: transparentize($surface, 0.5);
+    }
+}
+
+.sidebar-wifinetworks-cancel-button {
+    border-radius: 8px;
+    padding: 8px;
+    background-color: transparentize($surface, 0.7);
+    
+    &:hover {
+        background-color: transparentize($surface, 0.5);
+    }
+}
+
+.sidebar-wifinetworks-confirm-button {
+    border-radius: 8px;
+    padding: 8px;
+    background-color: transparentize($error, 0.7);
+    color: $onError;
+    
+    &:hover {
+        background-color: transparentize($error, 0.5);
+    }
+}
+
+.sidebar-wifinetworks-connect-button {
+    border-radius: 8px;
+    padding: 8px;
+    background-color: transparentize($primary, 0.7);
+    color: $onPrimary;
+    
+    &:hover {
+        background-color: transparentize($primary, 0.5);
+    }
+}
+
+.sidebar-wifinetworks-auth-entry {
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+    background-color: transparentize($surface, 0.5);
+    color: $onSurface;
+    min-height: 36px;
+    font-size: 14px;
+    
+    &:focus {
+        background-color: transparentize($surface, 0.3);
+        border: 1px solid transparentize($primary, 0.5);
+    }
+}
+
+.sidebar-wifinetworks-password-toggle {
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 8px;
+    background-color: transparentize($surface, 0.6);
+    
+    &:hover {
+        background-color: transparentize($surface, 0.4);
+    }
+} 

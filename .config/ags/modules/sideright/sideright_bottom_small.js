@@ -140,14 +140,14 @@ const images = [
 let content = Box({
     vertical: true,
     children: [
-        // Box({
-        //     hexpand:true,
-        //     hpack:"center",
-        //     vpack:"center",
-        //     child:inline_clock({
-        //     css:`font-size:5rem`,
-        // }),
-        // }),
+        Box({
+            hexpand:true,
+            hpack:"center",
+            vpack:"center",
+            child:inline_clock({
+            css:`font-size:3rem`,
+        }),
+        }),
         Box({vexpand:true}),
         userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('bottomright', {hpack:"end", vpack: 'end', className: 'corner corner-colorscheme'}) : null,
         Box({

@@ -56,6 +56,8 @@ const startRecording = () => {
     const outputFile = recordingPath + `${Date.now()}.mp4`;
     execAsync(`wf-recorder ${audio} -f "${outputFile}"`)
         .catch(console.error);
+    execAsync(`notify-send "Recording started" "Recording to ${outputFile}"`)
+        .catch(console.error);
 };
 
 const togglePauseResume = () => {
@@ -64,6 +66,7 @@ const togglePauseResume = () => {
     execAsync(`killall ${signal} wf-recorder`)
         .then(() => isPaused.value = !isPaused.value)
         .catch(console.error);
+    execAsync(`notify-send "Recording paused" "Recording to ${outputFile}"`)
 };
 
 const stopRecording = () => {
@@ -72,6 +75,8 @@ const stopRecording = () => {
             isRecording.value = false;
             isPaused.value = false;
         })
+        .catch(console.error);
+    execAsync(`notify-send "Recording stopped" "Recording to ${outputFile}"`)
         .catch(console.error);
 };
 

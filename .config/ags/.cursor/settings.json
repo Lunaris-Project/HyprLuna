@@ -1,0 +1,23 @@
+{
+  "projectRules": "../ags_project_rules.md",
+  "linting": {
+    "javascript": {
+      "enforceDestroyHandlers": true
+    }
+  },
+  "codeAssistance": {
+    "includePatterns": [
+      "**/*.js"
+    ],
+    "excludePatterns": [
+      "node_modules/**"
+    ]
+  },
+  "customRules": {
+    "widgetLifecycle": {
+      "enforceDestroyHandlers": true,
+      "enforceSignalDisconnection": true,
+      "enforceTimeoutCleanup": true
+    }
+  }
+} 

@@ -18,6 +18,7 @@ export default (monitor = 0) => Widget.Window({
             vertical: true,
             className: 'osd-window',
             children: [
+                
                 ColorschemeContent(),
                 IndicatorValues(monitor),
                 NotificationPopups(),

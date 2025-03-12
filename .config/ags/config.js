@@ -97,10 +97,10 @@ let Modules = () => [
         ]
     : []),
     SideLeft(),
-    // MusicWindow(),
-    // Recorder(),
+    Recorder(),
+    MusicWindow(),
     SideRight(),
-    // Glance(),
+    Glance(),
   ];
 
   App.config({

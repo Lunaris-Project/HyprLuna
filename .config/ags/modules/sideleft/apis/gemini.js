@@ -2,6 +2,7 @@ const { Gtk, Pango } = imports.gi;
 import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
+import GLib from 'gi://GLib';
 
 const { Box, Button, Icon, Label, Revealer, Scrollable } = Widget;
 import GeminiService from '../../../services/gemini.js';
@@ -14,10 +15,24 @@ import { chatEntry } from '../apiwidgets.js';
 
 const MODEL_NAME = `Gemini`;
 
+// Helper function to get translated strings with Arabic support
+const getLocalizedString = (english, arabic) => {
+    // Check if the current locale is Arabic
+    // This is a simplified approach - you might want to use a more robust i18n system
+    const isArabic = GLib.get_language_names().some(lang => lang.startsWith('ar'));
+    return isArabic ? arabic : english;
+};
+
 export const geminiTabIcon = Icon({
     hpack: 'center',
     icon: `google-gemini-symbolic`,
 })
+
+// Initialize the Gemini service and load history
+Utils.timeout(500, () => {
+    console.log('Initializing Gemini widget and loading history');
+    GeminiService.loadHistory();
+});
 
 const GeminiInfo = () => {
     const geminiLogo = Icon({
@@ -44,12 +59,12 @@ const GeminiInfo = () => {
                         className: 'txt-smallie txt-subtext',
                         wrap: true,
                         justify: Gtk.Justification.CENTER,
-                        label: getString('Powered by Google'),
+                        label: getLocalizedString('Powered by Google', 'مدعوم بواسطة جوجل'),
                     }),
                     Button({
                         className: 'txt-subtext txt-norm icon-material',
                         label: 'info',
-                        tooltipText: getString("Uses gemini-pro.\nNot affiliated, endorsed, or sponsored by Google.\n\nPrivacy: Chat messages aren't linked to your account,\n    but will be read by human reviewers to improve the model."),
+                        tooltipText: getLocalizedString("Uses gemini-pro.\nNot affiliated, endorsed, or sponsored by Google.\n\nPrivacy: Chat messages aren't linked to your account,\n    but will be read by human reviewers to improve the model.", "يستخدم gemini-pro.\nليس مرتبطًا بجوجل وليس مدعومًا أو معترف به أو مدعومًا به."),
                         setup: setupCursorHoverInfo,
                     }),
                 ]
@@ -77,11 +92,11 @@ export const GeminiSettings = () => MarginRevealer({
                 hpack: 'center',
                 icon: 'casino',
                 name: 'Randomness',
-                desc: getString("Gemini's temperature value.\n  Precise = 0\n  Balanced = 0.5\n  Creative = 1"),
+                desc: getLocalizedString("Gemini's temperature value.\n  Precise = 0\n  Balanced = 0.5\n  Creative = 1", "قيمة درجة الحرارة لجيميني.\n  دقيق = 0\n  متوازن = 0.5\n  إبداعي = 1"),
                 options: [
-                    { value: 0.00, name: getString('Precise'), },
-                    { value: 0.50, name: getString('Balanced'), },
-                    { value: 1.00, name: getString('Creative'), },
+                    { value: 0.00, name: getLocalizedString('Precise', 'دقيق'), },
+                    { value: 0.50, name: getLocalizedString('Balanced', 'متوازن'), },
+                    { value: 1.00, name: getLocalizedString('Creative', 'إبداعي'), },
                 ],
                 initIndex: 2,
                 onChange: (value, name) => {
@@ -96,8 +111,8 @@ export const GeminiSettings = () => MarginRevealer({
                 children: [
                     ConfigToggle({
                         icon: 'model_training',
-                        name: getString('Enhancements'),
-                        desc: getString("Tells Gemini:\n- It's a Linux sidebar assistant\n- Be brief and use bullet points"),
+                        name: getLocalizedString('Enhancements', 'تحسينات'),
+                        desc: getLocalizedString("Tells Gemini:\n- It's a Linux sidebar assistant\n- Be brief and use bullet points", "يخبر جيميني:\n- إنه عميل جانبي لنظام تشغيل لينكس\n- كون موجزًا واستخدم نقاط"),
                         initValue: GeminiService.assistantPrompt,
                         onChange: (self, newValue) => {
                             GeminiService.assistantPrompt = newValue;
@@ -105,8 +120,8 @@ export const GeminiSettings = () => MarginRevealer({
                     }),
                     ConfigToggle({
                         icon: 'shield',
-                        name: getString('Safety'),
-                        desc: getString("When turned off, tells the API (not the model) \nto not block harmful/explicit content"),
+                        name: getLocalizedString('Safety', 'السلامة'),
+                        desc: getLocalizedString("When turned off, tells the API (not the model) \nto not block harmful/explicit content", "عند تعطيله، يخبر الواجهة البرمجية (ليس النموذج) \nلتعطيل المحتوى الضار أو الصريح"),
                         initValue: GeminiService.safe,
                         onChange: (self, newValue) => {
                             GeminiService.safe = newValue;
@@ -114,12 +129,142 @@ export const GeminiSettings = () => MarginRevealer({
                     }),
                     ConfigToggle({
                         icon: 'history',
-                        name: getString('History'),
-                        desc: getString("Saves chat history\nMessages in previous chats won't show automatically, but they are there"),
+                        name: getLocalizedString('History', 'التاريخ'),
+                        desc: getLocalizedString("Saves chat history\nMessages in previous chats won't show automatically, but they are there", "يحفظ تاريخ الدردشة\nلن تظهر الرسائل التي تم إرسالها في الدردشات السابقة لكنها موجودة"),
                         initValue: GeminiService.useHistory,
                         onChange: (self, newValue) => {
                             GeminiService.useHistory = newValue;
                         },
+                    }),
+                    Button({
+                        className: 'sidebar-chat-settings-button',
+                        onClicked: () => {
+                            // Show rules in chat
+                            const rules = GeminiService.rules;
+                            let rulesText = '';
+                            if (rules.length > 0) {
+                                rulesText = getLocalizedString('### Your Rules:', '### القواعد الخاصة بك:') + '\n';
+                                
+                                // Group rules by enabled status
+                                const enabledRules = rules.filter(rule => rule.enabled);
+                                const disabledRules = rules.filter(rule => !rule.enabled);
+                                
+                                if (enabledRules.length > 0) {
+                                    rulesText += '\n' + getLocalizedString('**Active Rules:**', '**القواعد النشطة:**') + '\n';
+                                    enabledRules.forEach(rule => {
+                                        rulesText += `- **${rule.id}**: ${rule.content} ✓\n`;
+                                    });
+                                }
+                                
+                                if (disabledRules.length > 0) {
+                                    rulesText += '\n' + getLocalizedString('**Disabled Rules:**', '**القواعد المعطلة:**') + '\n';
+                                    disabledRules.forEach(rule => {
+                                        rulesText += `- **${rule.id}**: ${rule.content} ✗\n`;
+                                    });
+                                }
+                                
+                                rulesText += '\n' + getLocalizedString('### Rule Management:', '### إدارة القواعد:') + '\n';
+                                rulesText += getLocalizedString('- `/rule YOUR_RULE_TEXT` - Add a new rule', '- `/rule نص_القاعدة` - إضافة قاعدة جديدة') + '\n';
+                                rulesText += getLocalizedString('- `/togglerule rule-1` - Toggle rule on/off', '- `/togglerule rule-1` - تفعيل/تعطيل القاعدة') + '\n';
+                                rulesText += getLocalizedString('- `/removerule id rule-1` - Remove a rule by ID', '- `/removerule id rule-1` - حذف قاعدة بواسطة المعرف') + '\n';
+                                rulesText += getLocalizedString('- `/removerule text keyword` - Remove rules containing text', '- `/removerule text كلمة` - حذف القواعد التي تحتوي على نص') + '\n';
+                                rulesText += getLocalizedString('- `/removerule all` - Remove all rules', '- `/removerule all` - حذف جميع القواعد');
+                                
+                                rulesText += '\n\n' + getLocalizedString('*Rules are applied immediately to the current conversation.*', '*يتم تطبيق القواعد فورًا على المحادثة الحالية.*');
+                            } else {
+                                rulesText = getLocalizedString(
+                                    '### No Rules Defined\n\nYou can add rules using the `/rule` command.\n\nRules tell the AI how to behave or what to remember.',
+                                    '### لا توجد قواعد محددة\n\nيمكنك إضافة قواعد باستخدام الأمر `/rule`.\n\nالقواعد تخبر الذكاء الاصطناعي كيف يتصرف أو ماذا يتذكر.'
+                                );
+                            }
+                            
+                            chatContent.add(SystemMessage(
+                                `${rulesText}\n\n` + 
+                                getLocalizedString(
+                                    'Rules are stored in:\n`~/.ags/ai/rules.json` and `~/.ags/ai/rules.txt`\n\nChanges to rule files are automatically detected and applied immediately.',
+                                    'يتم تخزين القواعد في:\n`~/.ags/ai/rules.json` و `~/.ags/ai/rules.txt`\n\nيتم اكتشاف التغييرات في ملفات القواعد وتطبيقها فورًا.'
+                                ),
+                                getLocalizedString('Your Rules', 'القواعد الخاصة بك'),
+                                geminiView
+                            ));
+                        },
+                        setup: setupCursorHover,
+                        child: Box({
+                            children: [
+                                Icon({
+                                    icon: 'rules',
+                                    className: 'sidebar-chat-settings-icon',
+                                }),
+                                Box({
+                                    vertical: true,
+                                    children: [
+                                        Label({
+                                            xalign: 0,
+                                            className: 'txt txt-norm sidebar-chat-settings-title',
+                                            label: getLocalizedString('Your Rules', 'القواعد الخاصة بك'),
+                                        }),
+                                        Label({
+                                            xalign: 0,
+                                            className: 'txt txt-smallie txt-subtext sidebar-chat-settings-desc',
+                                            setup: (self) => {
+                                                const updateLabel = () => {
+                                                    const activeCount = GeminiService.activeRulesCount;
+                                                    const totalCount = GeminiService.totalRulesCount;
+                                                    
+                                                    if (totalCount === 0) {
+                                                        self.label = getLocalizedString('No rules defined yet', 'لا توجد قواعد محددة بعد');
+                                                    } else if (activeCount === totalCount) {
+                                                        self.label = getLocalizedString(`${activeCount} active rules`, `${activeCount} قواعد نشطة`);
+                                                    } else {
+                                                        self.label = getLocalizedString(
+                                                            `${activeCount} active, ${totalCount} total rules`, 
+                                                            `${activeCount} نشطة، ${totalCount} إجمالي القواعد`
+                                                        );
+                                                    }
+                                                };
+                                                
+                                                // Initial update
+                                                updateLabel();
+                                                
+                                                // Update when rules change
+                                                self.hook(GeminiService, updateLabel, 'rulesChanged');
+                                            },
+                                        }),
+                                    ],
+                                }),
+                                Box({ hexpand: true }),
+                                Box({
+                                    className: 'rules',
+                                    css: 'min-width: 24px; min-height: 24px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.1); margin-right: 8px;',
+                                    hpack: 'center',
+                                    vpack: 'center',
+                                    setup: (self) => {
+                                        const updateBadge = () => {
+                                            const activeCount = GeminiService.activeRulesCount;
+                                            self.children = [
+                                                Label({
+                                                    className: 'txt-smallie',
+                                                    label: `${activeCount}`,
+                                                })
+                                            ];
+                                            
+                                            // Update badge color based on count
+                                            if (activeCount === 0) {
+                                                self.css = 'min-width: 24px; min-height: 24px; border-radius: 12px; background-color: rgba(255, 255, 255, 0.1); margin-right: 8px;';
+                                            } else {
+                                                self.css = 'min-width: 24px; min-height: 24px; border-radius: 12px; background-color: #f28b82; margin-right: 8px;';
+                                            }
+                                        };
+                                        
+                                        // Initial update
+                                        updateBadge();
+                                        
+                                        // Update when rules change
+                                        self.hook(GeminiService, updateBadge, 'rulesChanged');
+                                    },
+                                }),
+                            ],
+                        }),
                     }),
                 ]
             })
@@ -170,34 +315,27 @@ const geminiWelcome = Box({
     })
 });
 
-// export const chatContent = Box({
-//     className: 'spacing-v-5',
-//     vertical: true,
-//     setup: (self) => self
-//         .hook(GeminiService, (box, id) => {
-//             const message = GeminiService.messages[id];
-//             if (!message) return;
-//             box.add(ChatMessage(message, MODEL_NAME))
-//         }, 'newMsg')
-//     ,
-// });
 export const chatContent = Box({
     className: 'spacing-v-5',
     vertical: true,
-    setup: (self) => {
-        // If history is enabled, show all preloaded messages immediately.
-        if (GeminiService.useHistory) {
-            GeminiService.messages.forEach(message => {
-                self.add(ChatMessage(message, MODEL_NAME));
-            });
-        }
-        // Hook for any new messages coming in.
-        self.hook(GeminiService, (box, id) => {
+    setup: (self) => self
+        .hook(GeminiService, (box, id) => {
             const message = GeminiService.messages[id];
             if (!message) return;
-            box.add(ChatMessage(message, MODEL_NAME));
-        }, 'newMsg');
-    }
+            box.add(ChatMessage(message, MODEL_NAME))
+        }, 'newMsg')
+        .hook(GeminiService, (box) => {
+            // Clear existing messages when history changes
+            console.log('History changed, clearing UI messages');
+            const children = box.get_children();
+            for (let i = 0; i < children.length; i++) {
+                children[i].destroy();
+            }
+            
+            // No need to manually add messages here as the newMsg signals will be emitted
+            // for each message after historyChanged
+        }, 'historyChanged')
+    ,
 });
 
 const clearChat = () => {
@@ -221,6 +359,9 @@ export const geminiCommands = Box({
     children: [
         Box({ hexpand: true }),
         CommandButton('/key'),
+        CommandButton('/rule'),
+        CommandButton('/removerule'),
+        CommandButton('/togglerule'),
         CommandButton('/model'),
         CommandButton('/clear'),
     ]
@@ -242,7 +383,7 @@ export const sendMessage = (text) => {
             clearChat();
             GeminiService.loadHistory();
         }
-        else if (text.startsWith('/model')) chatContent.add(SystemMessage(`${getString("Currently using")} \`${GeminiService.modelName}\``, '/model', geminiView))
+        else if (text.startsWith('/model')) chatContent.add(SystemMessage(`${getLocalizedString("Currently using", "حاليًا يستخدم")} \`${GeminiService.modelName}\``, '/model', geminiView))
         else if (text.startsWith('/prompt')) {
             const firstSpaceIndex = text.indexOf(' ');
             const prompt = text.slice(firstSpaceIndex + 1);
@@ -256,55 +397,181 @@ export const sendMessage = (text) => {
         else if (text.startsWith('/key')) {
             const parts = text.split(' ');
             if (parts.length == 1) chatContent.add(SystemMessage(
-                `${getString("Key stored in:")} \n\`${GeminiService.keyPath}\`\n${getString("To update this key, type")} \`/key YOUR_API_KEY\``,
+                `${getLocalizedString("Key stored in:", "يتم تخزين المفتاح في:")} \n\`${GeminiService.keyPath}\`\n${getLocalizedString("To update this key, type", "لتحديث هذا المفتاح، اكتب")} \`/key YOUR_API_KEY\``,
                 '/key',
                 geminiView));
             else {
                 GeminiService.key = parts[1];
-                chatContent.add(SystemMessage(`${getString("Updated API Key at")}\n\`${GeminiService.keyPath}\``, '/key', geminiView));
+                chatContent.add(SystemMessage(`${getLocalizedString("Updated API Key at", "تم تحديث مفتاح الواجهة البرمجية عند")}\n\`${GeminiService.keyPath}\``, '/key', geminiView));
+            }
+        }
+        else if (text.startsWith('/togglerule')) {
+            const parts = text.split(' ');
+            if (parts.length == 1) {
+                // Show usage and current rules
+                const rules = GeminiService.rules;
+                let rulesText = '';
+                if (rules.length > 0) {
+                    rulesText = getLocalizedString('### Current Rules:', '### القواعد الحالية:') + '\n';
+                    rules.forEach(rule => {
+                        rulesText += `- **${rule.id}**: ${rule.content} ${rule.enabled ? '✓' : '✗'}\n`;
+                    });
+                    rulesText += '\n' + getLocalizedString('### Usage:', '### استخدام:') + '\n';
+                    rulesText += '- `/togglerule rule-1` - Toggle rule with ID rule-1';
+                } else {
+                    rulesText = getLocalizedString('No rules defined yet.', 'لا توجد قواعد محددة بعد.');
+                }
+                chatContent.add(SystemMessage(rulesText, '/togglerule', geminiView));
+            } else {
+                // Toggle the rule
+                const ruleId = parts[1];
+                const result = GeminiService.toggleRuleEnabled(ruleId);
+                if (result) {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `Rule **${result.id}** is now ${result.enabled ? 'enabled ✓' : 'disabled ✗'}\n\nChanges will apply immediately and to new conversations.`,
+                            `قاعدة **${result.id}** الآن ${result.enabled ? 'مفعلة ✓' : 'غير مفعلة ✗'}\n\nسيتم تطبيق التغييرات فورًا وعلى المحادثات الجديدة.`
+                        ),
+                        '/togglerule',
+                        geminiView
+                    ));
+                } else {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `No rule found with ID \`${ruleId}\`.`,
+                            `لم يتم العثور على قاعدة بمعرف \`${ruleId}\`.`
+                        ),
+                        '/togglerule',
+                        geminiView
+                    ));
+                }
+            }
+        }
+        else if (text.startsWith('/rule')) {
+            const firstSpaceIndex = text.indexOf(' ');
+            const ruleContent = text.slice(firstSpaceIndex + 1);
+            if (firstSpaceIndex == -1 || ruleContent.length < 1) {
+                // Show usage and current rules
+                const rules = GeminiService.rules;
+                let rulesText = '';
+                if (rules.length > 0) {
+                    rulesText = getLocalizedString('### Current Rules:', '### القواعد الحالية:') + '\n';
+                    rules.forEach(rule => {
+                        rulesText += `- **${rule.id}**: ${rule.content} ${rule.enabled ? '✓' : '✗'}\n`;
+                    });
+                    rulesText += '\n' + getLocalizedString('### Usage:', '### استخدام:') + '\n';
+                    rulesText += '- `/rule YOUR_RULE_TEXT` - Add a new rule\n';
+                    rulesText += '- `/togglerule rule-1` - Toggle rule on/off\n';
+                    rulesText += '- `/removerule id rule-1` - Remove a rule';
+                } else {
+                    rulesText = getLocalizedString('No rules defined yet.', 'لا توجد قواعد محددة بعد.');
+                }
+                chatContent.add(SystemMessage(
+                    getLocalizedString(`Usage: \`/rule YOUR_RULE_TEXT\`\n\n${rulesText}\n\nRules are stored in:\n\`~/.ags/ai/rules.json\` and \`~/.ags/ai/rules.txt\`\n\nChanges to rule files are automatically detected and applied.`, 'استخدام: \`/rule نص_القاعدة\`\n\n${rulesText}\n\nيتم تخزين القواعد في:\n\`~/.ags/ai/rules.json\` و \`~/.ags/ai/rules.txt\`\n\nيتم اكتشاف التغييرات في ملفات القواعد وتطبيقها تلقائيًا.'),
+                    '/rule',
+                    geminiView
+                ));
+            } else {
+                // Add the rule
+                const ruleId = GeminiService.addRule(ruleContent);
+                chatContent.add(SystemMessage(
+                    getLocalizedString(`Added rule: \`${ruleContent}\`\nID: \`${ruleId}\`\n\nThis rule will be applied immediately and to new conversations.\nUse \`/togglerule ${ruleId}\` to disable/enable it.`, 'تم إضافة قاعدة: \`${ruleContent}\`\nمعرف: \`${ruleId}\`\n\nسيتم تطبيق هذه القاعدة فورًا وعلى المحادثات الجديدة.\nاستخدم \`/togglerule ${ruleId}\` لتعطيل/تفعيله.'),
+                    '/rule',
+                    geminiView
+                ));
+            }
+        }
+        else if (text.startsWith('/removerule')) {
+            const parts = text.split(' ');
+            if (parts.length == 1) {
+                // Show usage and current rules for removal
+                const rules = GeminiService.rules;
+                let rulesText = '';
+                if (rules.length > 0) {
+                    rulesText = getLocalizedString('### Current Rules:', '### القواعد الحالية:') + '\n';
+                    rules.forEach(rule => {
+                        rulesText += `- **${rule.id}**: ${rule.content}\n`;
+                    });
+                    rulesText += '\n' + getLocalizedString('### Usage:', '### استخدام:') + '\n';
+                    rulesText += '- `/removerule id rule-1` - Remove rule with ID rule-1\n';
+                    rulesText += '- `/removerule text keyword` - Remove rules containing "keyword"\n';
+                    rulesText += '- `/removerule all` - Remove all rules';
+                } else {
+                    rulesText = getLocalizedString('No rules defined yet.', 'لا توجد قواعد محددة بعد.');
+                }
+                chatContent.add(SystemMessage(rulesText, '/removerule', geminiView));
+            } else if (parts[1] === 'all') {
+                // Remove all rules
+                const success = GeminiService.removeAllRules();
+                if (success) {
+                    chatContent.add(SystemMessage(getLocalizedString('All rules have been removed.', 'تم إزالة جميع القواعد.'), '/removerule', geminiView));
+                } else {
+                    chatContent.add(SystemMessage(getLocalizedString('No rules to remove.', 'لا توجد قواعد لإزالة.'), '/removerule', geminiView));
+                }
+            } else if (parts[1] === 'id' && parts.length > 2) {
+                // Remove rule by ID
+                const ruleId = parts[2];
+                const success = GeminiService.removeRuleById(ruleId);
+                if (success) {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `Rule with ID \`${ruleId}\` has been removed.`,
+                            `تم إزالة القاعدة بمعرف \`${ruleId}\`.`
+                        ),
+                        '/removerule',
+                        geminiView
+                    ));
+                } else {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `No rule found with ID \`${ruleId}\`.`,
+                            `لم يتم العثور على قاعدة بمعرف \`${ruleId}\`.`
+                        ),
+                        '/removerule',
+                        geminiView
+                    ));
+                }
+            } else if (parts[1] === 'text' && parts.length > 2) {
+                // Remove rule by text content
+                const searchText = parts.slice(2).join(' ');
+                const success = GeminiService.removeRuleByText(searchText);
+                if (success) {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `Rules containing \`${searchText}\` have been removed.`,
+                            `تم إزالة القواعد التي تحتوي على \`${searchText}\`.`
+                        ),
+                        '/removerule',
+                        geminiView
+                    ));
+                } else {
+                    chatContent.add(SystemMessage(
+                        getLocalizedString(
+                            `No rules found containing \`${searchText}\`.`,
+                            `لم يتم العثور على قواعد تحتوي على \`${searchText}\`.`
+                        ),
+                        '/removerule',
+                        geminiView
+                    ));
+                }
+            } else {
+                // Invalid usage
+                chatContent.add(SystemMessage(
+                    getLocalizedString('Invalid usage. Try:\n- `/removerule id rule-1`\n- `/removerule text keyword`\n- `/removerule all`', 'استخدام غير صالح. جرب:\n- `/removerule id rule-1`\n- `/removerule text keyword`\n- `/removerule all`'),
+                    '/removerule',
+                    geminiView
+                ));
             }
         }
         else if (text.startsWith('/test'))
-            chatContent.add(SystemMessage(markdownTest, `Markdown test`, geminiView));
+            chatContent.add(SystemMessage(markdownTest, getLocalizedString('Markdown test', 'اختبار Markdown'), geminiView));
         else
-            chatContent.add(SystemMessage(getString(`Invalid command.`), 'Error', geminiView))
+            chatContent.add(SystemMessage(getLocalizedString('Invalid command.', 'أمر غير صالح.'), 'Error', geminiView))
     }
     else {
         GeminiService.send(text);
     }
 }
-
-// export const geminiView = Box({
-//     homogeneous: true,
-//     children: [Scrollable({
-//         className: 'sidebar-chat-viewport',
-//         vexpand: true,
-//         child: Box({
-//             vertical: true,
-//             children: [
-//                 geminiWelcome,
-//                 chatContent,
-//             ]
-//         }),
-//         setup: (scrolledWindow) => {
-//             // Show scrollbar
-//             scrolledWindow.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
-//             const vScrollbar = scrolledWindow.get_vscrollbar();
-//             vScrollbar.get_style_context().add_class('sidebar-scrollbar');
-//             // Avoid click-to-scroll-widget-to-view behavior
-//             Utils.timeout(1, () => {
-//                 const viewport = scrolledWindow.child;
-//                 viewport.set_focus_vadjustment(new Gtk.Adjustment(undefined));
-//             })
-//             // Always scroll to bottom with new content
-//             const adjustment = scrolledWindow.get_vadjustment();
-//             adjustment.connect("changed", () => Utils.timeout(1, () => {
-//                 if (!chatEntry.hasFocus) return;
-//                 adjustment.set_value(adjustment.get_upper() - adjustment.get_page_size());
-//             }))
-//         }
-//     })]
-// });
 
 export const geminiView = Box({
     homogeneous: true,
@@ -312,6 +579,23 @@ export const geminiView = Box({
     attribute: {
         'pinnedDown': true
     },
+    setup: (self) => self
+        .hook(GeminiService, () => {
+            // Show notification when rules are reloaded
+            chatContent.add(SystemMessage(
+                getLocalizedString('Rules have been updated from file changes.\nChanges will apply to the current and new conversations.', 'تم تحديث القواعد من تغيير ملفات\nسيؤثر التغيير على المحادثة الحالية والمحادثات الجديدة.'),
+                getLocalizedString('Rules Reloaded', 'تم تحديث القواعد'),
+                geminiView
+            ));
+        }, 'rulesChanged')
+        .hook(GeminiService, () => {
+            // Show notification when history is reloaded
+            chatContent.add(SystemMessage(
+                getLocalizedString('Chat history has been updated from file changes.', 'تم تحديث سجل المحادثة من تغييرات الملفات.'),
+                getLocalizedString('History Reloaded', 'تم تحديث السجل'),
+                geminiView
+            ));
+        }, 'historyChanged'),
     children: [
         Scrollable({
             className: 'sidebar-chat-viewport',

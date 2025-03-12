@@ -3,7 +3,7 @@
   "displayName": "Generated Matugen Theme",
   "description": "A VS Code theme inspired by Material You, designed to provide a calming and efficient coding environment.",
   "version": "1.0.0",
-  "publisher": "Pharmaracist",
+  "publisher": "Lunaris-Project",
   "engines": {
     "vscode": "1.91.0"
   },

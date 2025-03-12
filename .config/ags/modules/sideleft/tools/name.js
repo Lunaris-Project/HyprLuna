@@ -10,12 +10,12 @@ export default () => Box({
     className: 'txt sidebar-module techfont',
     children: [
         Label({
-            label: getString('HyprNoon')
+            label: getString('HyprLuna')
         }),
         Box({ hexpand: true }),
         Button({
             className: 'sidebar-module-btn-arrow',
-            onClicked: () => execAsync(['xdg-open', 'https://github.com/pharmaracist/HyprNoon']).catch(print),
+            onClicked: () => execAsync(['xdg-open', 'https://github.com/Lunaris-Project/HyprLuna']).catch(print),
             child: Icon({
                 className: 'txt txt-norm',
                 icon: 'github-symbolic',

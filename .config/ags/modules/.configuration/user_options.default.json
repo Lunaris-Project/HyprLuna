@@ -29,12 +29,12 @@
     "visible": false
   },
   "ai": {
-    "defaultGPTProvider": "microsoft-phi-4",
-    "onSearch": "microsoft-phi-4",
+    "defaultGPTProvider": "deepseek-r1",
+    "onSearch": "deepseek-r1",
     "defaultTemperature": 0.9,
     "enhancements": true,
     "useHistory": true,
-    "useInitMessages": true,
+    "useInitMessages": false,
     "safety": true,
     "writingCursor": " ...",
     "proxyUrl": "",
@@ -128,9 +128,9 @@
     "siderightTheme": "sideright_bottom",
     "ModuleCalendar": {
       "enabled": true,
-      "visible": false
+      "visible": true
     },
-    "showAnimeCat": false,
+    "showAnimeCat": true,
     "centerModules": {
       "enabled": [
         "vpnGate",
@@ -152,25 +152,25 @@
         "enabled": true
       },
       "powerProfiles": {
-        "enabled": false
+        "enabled": true
       },
       "taskManager": {
-        "enabled": false,
+        "enabled": true,
         "pollingRate": 5000
       },
       "bluetooth": {
         "enabled": true
       },
       "wifiNetworks": {
-        "enabled": false
+        "enabled": true
       },
       "prayerTimes": {
-        "enabled": false
+        "enabled": true
       }
     },
     "github": {
-      "repoOwner": "pharmaracist",
-      "repoName": "HyprNoon"
+      "repoOwner": "Lunaris-Project",
+      "repoName": "HyprLuna"
     },
     "ai": {
       "medicalDictionary": {
@@ -225,6 +225,15 @@
           "key_get_url": "https://openrouter.ai/keys",
           "key_file": "openrouter_key.txt",
           "model": "microsoft/phi-4"
+        },
+        "deepseek-r1": {
+          "name": "DeepSeek R1",
+          "logo_name": "openrouter-symbolic",
+          "description": "DeepSeek R1 via OpenRouter",
+          "base_url": "https://openrouter.ai/api/v1/chat/completions",
+          "key_get_url": "https://openrouter.ai/keys",
+          "key_file": "openrouter_key.txt",
+          "model": "deepseek/deepseek-r1"
         }
       },
       "initMessages": []
@@ -336,7 +345,7 @@
     ],
     "layer": "top",
     "monitorExclusivity": true,
-    "searchPinnedAppIcons": false,
+    "searchPinnedAppIcons": true,
     "trigger": [
       "client-added",
       "client-removed"
@@ -449,13 +458,13 @@
     "cava": {
       "enabled": true
     },
-    "enableAmberol": false,
+    "enableAmberol": true,
     "nightLightTemp": "6000",
     "clickCloseRegion": true,
     "sideLeftPin": true,
     "cornerRadius": "20",
     "widgetCorners": true,
-    "todoPath": "/mnt/Data/General-Archive/obsidian/HyprNoon.md",
+    "todoPath": "Documents/HyprLuna/TODOS.md",
     "recordingPath": "/Videos/Records",
     "screencorners": {
       "debounce": "50",

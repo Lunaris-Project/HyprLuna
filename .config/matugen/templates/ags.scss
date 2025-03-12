@@ -1,4 +1,4 @@
-// Material You Theme for HyprNoon Shell By Pharmaracist
+// Material You Theme for AGS Shell Lunaris-Project
 
 // Core Colors
 $primary: {{colors.primary.default.hex}};
@@ -17,7 +17,7 @@ $error: {{colors.error.default.hex}};
 $onError: {{colors.on_error.default.hex}};
 $errorContainer: {{colors.error_container.default.hex}};
 $onErrorContainer: {{colors.on_error_container.default.hex}};
-$background: {{colors.surface.default.hex}};
+$background: {{colors.background.default.hex}};
 $onBackground: {{colors.on_background.default.hex}};
 $surface: {{colors.surface.default.hex}};
 $onSurface: {{colors.on_surface.default.hex}};
@@ -57,11 +57,11 @@ $tertiaryFixedDim: {{colors.tertiary_fixed_dim.default.hex}};
 $onTertiaryFixed: {{colors.on_tertiary_fixed.default.hex}};
 $onTertiaryFixedVariant: {{colors.on_tertiary_fixed_variant.default.hex}};
 
-// Optional Colors (Checks for the generator)
-$success: $primary;
-$onSuccess: $onPrimary;
-$successContainer: $primaryContainer;
-$onSuccessContainer: $onPrimaryContainer;
+// Optional Colors (Check your generator)
+$success: {{colors.primary.default.hex}};
+$onSuccess: {{colors.on_primary.default.hex}};
+$successContainer: {{colors.primary_container.default.hex}};
+$onSuccessContainer: {{colors.on_primary_container.default.hex}};
 
 // Term Colors
 $term0: $primary;
