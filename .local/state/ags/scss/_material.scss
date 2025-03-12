@@ -1,67 +1,67 @@
-// Material You Theme for AGS Shell Lunaris-Project
+// Material You Theme for HyprNoon Shell By Pharmaracist
 
 // Core Colors
-$primary: #81d5cc;
-$onPrimary: #003733;
-$primaryContainer: #00504b;
-$onPrimaryContainer: #9df2e8;
-$secondary: #b1ccc8;
-$onSecondary: #1c3532;
-$secondaryContainer: #324b48;
-$onSecondaryContainer: #cce8e4;
-$tertiary: #afc9e7;
-$onTertiary: #17324a;
-$tertiaryContainer: #2f4961;
-$onTertiaryContainer: #cee5ff;
+$primary: #a8c8ff;
+$onPrimary: #002752;
+$primaryContainer: #456597;
+$onPrimaryContainer: #ffffff;
+$secondary: #bdc7dc;
+$onSecondary: #1f2838;
+$secondaryContainer: #5b6577;
+$onSecondaryContainer: #ffffff;
+$tertiary: #dbbce1;
+$onTertiary: #35203c;
+$tertiaryContainer: #755c7c;
+$onTertiaryContainer: #ffffff;
 $error: #ffb4ab;
-$onError: #690005;
-$errorContainer: #93000a;
-$onErrorContainer: #ffdad6;
-$background: #0e1514;
-$onBackground: #dde4e2;
-$surface: #0e1514;
-$onSurface: #dde4e2;
+$onError: #580003;
+$errorContainer: #c32220;
+$onErrorContainer: #ffffff;
+$background: #111318;
+$onBackground: #e1e2e9;
+$surface: #111318;
+$onSurface: #e6e6ed;
 
 // Surface Variants
-$surfaceVariant: #3f4947;
-$onSurfaceVariant: #bec9c6;
-$surfaceDim: #0e1514;
-$surfaceBright: #343a39;
-$surfaceContainerLowest: #090f0f;
-$surfaceContainerLow: #161d1c;
-$surfaceContainer: #1a2120;
-$surfaceContainerHigh: #252b2a;
-$surfaceContainerHighest: #303635;
+$surfaceVariant: #43474e;
+$onSurfaceVariant: #c4c6cf;
+$surfaceDim: #111318;
+$surfaceBright: #3c3e43;
+$surfaceContainerLowest: #090c10;
+$surfaceContainerLow: #1a1c21;
+$surfaceContainer: #212328;
+$surfaceContainerHigh: #2b2d32;
+$surfaceContainerHighest: #36383d;
 
 // Other Colors
-$outline: #899391;
-$outlineVariant: #3f4947;
+$outline: #93969f;
+$outlineVariant: #61646c;
 $shadow: #000000;
 $scrim: #000000;
-$inverseSurface: #dde4e2;
-$inverseOnSurface: #2b3231;
-$inversePrimary: #006a63;
-$surfaceTint: #81d5cc;
+$inverseSurface: #e1e2e9;
+$inverseOnSurface: #2e3035;
+$inversePrimary: #375889;
+$surfaceTint: #a8c8ff;
 
 // Fixed Colors
-$primaryFixed: #9df2e8;
-$primaryFixedDim: #81d5cc;
-$onPrimaryFixed: #00201d;
-$onPrimaryFixedVariant: #00504b;
-$secondaryFixed: #cce8e4;
-$secondaryFixedDim: #b1ccc8;
-$onSecondaryFixed: #051f1d;
-$onSecondaryFixedVariant: #324b48;
-$tertiaryFixed: #cee5ff;
-$tertiaryFixedDim: #afc9e7;
-$onTertiaryFixed: #001d33;
-$onTertiaryFixedVariant: #2f4961;
+$primaryFixed: #d5e3ff;
+$primaryFixedDim: #a8c8ff;
+$onPrimaryFixed: #001b3c;
+$onPrimaryFixedVariant: #244676;
+$secondaryFixed: #d9e3f8;
+$secondaryFixedDim: #bdc7dc;
+$onSecondaryFixed: #121c2b;
+$onSecondaryFixedVariant: #3d4657;
+$tertiaryFixed: #f8d8fe;
+$tertiaryFixedDim: #dbbce1;
+$onTertiaryFixed: #28132f;
+$onTertiaryFixedVariant: #553d5c;
 
-// Optional Colors (Check your generator)
-$success: #81d5cc;
-$onSuccess: #003733;
-$successContainer: #00504b;
-$onSuccessContainer: #9df2e8;
+// Optional Colors (Checks for the generator)
+$success: $primary;
+$onSuccess: $onPrimary;
+$successContainer: $primaryContainer;
+$onSuccessContainer: $onPrimaryContainer;
 
 // Term Colors
 $term0: $primary;
