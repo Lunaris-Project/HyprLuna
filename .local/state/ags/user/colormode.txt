@@ -1,5 +1,7 @@
 dark
 transparent
 scheme-tonal-spot
-none
+nord
 noborder
+vibrant
+intense
