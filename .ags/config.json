@@ -1,0 +1,477 @@
+{
+  "muslim": {
+    "enabled": true,
+    "prayerTimes": {
+      "city": "Cairo"
+    }
+  },
+  "indicators": {
+    "enabled": true
+  },
+  "wallselect": {
+    "enabled": true,
+    "wallpaperFolder": "/Pictures/Wallpapers",
+    "showPicker": true,
+    "width": 200,
+    "height": 110,
+    "radius": 20,
+    "highQualityPreview": true
+  },
+  "session": {
+    "enabled": true
+  },
+  "desktopBackground": {
+    "CurrentMode": "Normal",
+    "enabled": true,
+    "enableWisecat": false,
+    "zoomEffect": true,
+    "resources": true,
+    "visible": false
+  },
+  "ai": {
+    "defaultGPTProvider": "deepseek-r1",
+    "onSearch": "deepseek-r1",
+    "defaultTemperature": 0.9,
+    "enhancements": true,
+    "useHistory": true,
+    "useInitMessages": false,
+    "safety": true,
+    "writingCursor": " ...",
+    "proxyUrl": "",
+    "__custom": [
+      "extraGptModels"
+    ]
+  },
+  "animations": {
+    "choreographyDelay": 50,
+    "durationSmall": 80,
+    "durationLarge": 200,
+    "durationHuge": 400
+  },
+  "appearance": {
+    "autoDarkMode": {
+      "enabled": false,
+      "from": "18:10",
+      "to": "6:10"
+    },
+    "Scroll": {
+      "debounce": 200,
+      "transition": "slide_up_down",
+      "mode": "scroll"
+    },
+    "layerSmoke": false,
+    "layerSmokeStrength": 0.2,
+    "fakeScreenRounding": 1
+  },
+  "apps": {
+    "bluetooth": "overskride",
+    "imageViewer": "swappy",
+    "network": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center wifi",
+    "settings": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center",
+    "taskManager": "kitty btop",
+    "terminal": "kitty",
+    "editor": "code"
+  },
+  "battery": {
+    "low": 20,
+    "critical": 10,
+    "warnLevels": [
+      20,
+      15,
+      5
+    ],
+    "warnTitles": [
+      "Low battery",
+      "Very low battery",
+      "Critical Battery"
+    ],
+    "warnMessages": [
+      "Plug in the charger",
+      "You there?",
+      "PLUG THE CHARGER ALREADY"
+    ],
+    "suspendThreshold": 3
+  },
+  "brightness": {
+    "controllers": {
+      "default": "auto"
+    }
+  },
+  "cheatsheet": {
+    "enabled": true,
+    "keybinds": {
+      "configPath": ""
+    }
+  },
+  "i18n": {
+    "langCode": "",
+    "extraLogs": false
+  },
+  "monitors": {
+    "scaleMethod": "division"
+  },
+  "music": {
+    "musicDir": "/Music",
+    "preferredPlayer": "plasma-browser-integration"
+  },
+  "overview": {
+    "enabled": true,
+    "useNameInPrompt": false,
+    "spotlightTheme": true,
+    "scale": 0.18,
+    "numOfRows": 2,
+    "wsNumScale": 0.09,
+    "wsNumMarginScale": 0.07
+  },
+  "sidebar": {
+    "extraCss": "min-width:450px",
+    "siderightTheme": "sideright_bottom",
+    "ModuleCalendar": {
+      "enabled": true,
+      "visible": true
+    },
+    "showAnimeCat": true,
+    "centerModules": {
+      "enabled": [
+        "vpnGate",
+        "notifications",
+        "audioControls",
+        "powerProfiles",
+        "taskManager",
+        "bluetooth",
+        "wifiNetworks",
+        "prayerTimes"
+      ],
+      "vpnGate": {
+        "enabled": false
+      },
+      "notifications": {
+        "enabled": true
+      },
+      "audioControls": {
+        "enabled": true
+      },
+      "powerProfiles": {
+        "enabled": true
+      },
+      "taskManager": {
+        "enabled": true,
+        "pollingRate": 5000
+      },
+      "bluetooth": {
+        "enabled": true
+      },
+      "wifiNetworks": {
+        "enabled": true
+      },
+      "prayerTimes": {
+        "enabled": true
+      }
+    },
+    "github": {
+      "repoOwner": "Lunaris-Project",
+      "repoName": "HyprLuna"
+    },
+    "ai": {
+      "medicalDictionary": {
+        "apiKey": ""
+      },
+      "logo": "deepseek-symbolic",
+      "__custom": [
+        "extraGptModels"
+      ],
+      "extraGptModels": {
+        "zuki": {
+          "name": "ZoukiJourney API",
+          "logo_name": "ai-zukijourney-symbolic",
+          "description": "An API from @zukixa on GitHub.\nNote: Keys are IP-locked so it's buggy sometimes\nPricing: Free: 10/min, 800/day.\nRequires you to join their Discord for a key",
+          "base_url": "https://zukijourney.xyzbot.net/v1/chat/completions",
+          "key_get_url": "https://discord.com/invite/Y4J6XXnmQ6",
+          "key_file": "zuki_key.txt",
+          "model": "gpt-3.5-turbo"
+        },
+        "ollama": {
+          "name": "DeepSeek",
+          "logo_name": "ollama-symbolic",
+          "description": "Ollama Local AI",
+          "base_url": "http://localhost:11434/v1/chat/completions",
+          "key_get_url": "https://openrouter.ai/keys",
+          "key_file": "ollama_key.txt",
+          "model": "deepseek-r1:1.5b"
+        },
+        "oxygen-40": {
+          "name": "Oxygen (GPT-4o)",
+          "logo_name": "ai-oxygen-symbolic",
+          "description": "An API from Tornado Softwares\nPricing: Free: 100/day\nRequires you to join their Discord for a key')",
+          "base_url": "https://app.oxyapi.uk/v1/chat/completions",
+          "key_get_url": "https://discord.com/invite/kM6MaCqGKA",
+          "key_file": "oxygen_key.txt",
+          "model": "gpt-4o"
+        },
+        "chatGPT": {
+          "name": "OpenAI (GPT-3.5)",
+          "logo_name": "ai-openai-symbolic",
+          "description": "An API from OpenAI')",
+          "base_url": "https://app.oxyapi.uk/v1/chat/completions",
+          "key_get_url": "https://discord.com/invite/kM6MaCqGKA",
+          "key_file": "openai_key.txt",
+          "model": "gpt-3.5"
+        },
+        "microsoft-phi-4": {
+          "name": "microsoft/phi-4",
+          "logo_name": "openrouter-symbolic",
+          "description": "microsoft/phi-4 via OpenRouter",
+          "base_url": "https://openrouter.ai/api/v1/chat/completions",
+          "key_get_url": "https://openrouter.ai/keys",
+          "key_file": "openrouter_key.txt",
+          "model": "microsoft/phi-4"
+        },
+        "deepseek-r1": {
+          "name": "DeepSeek R1",
+          "logo_name": "openrouter-symbolic",
+          "description": "DeepSeek R1 via OpenRouter",
+          "base_url": "https://openrouter.ai/api/v1/chat/completions",
+          "key_get_url": "https://openrouter.ai/keys",
+          "key_file": "openrouter_key.txt",
+          "model": "deepseek/deepseek-r1"
+        }
+      },
+      "initMessages": []
+    },
+    "pages": {
+      "order": [
+        "apis",
+        "tools",
+        "github"
+      ],
+      "apis": {
+        "order": [
+          "gpt",
+          "gemini",
+          "quran",
+          "translater"
+        ]
+      }
+    },
+    "translater": {
+      "__custom": [
+        "languages"
+      ],
+      "from": "auto",
+      "to": "ar",
+      "languages": {
+        "auto": "Auto",
+        "en": "English",
+        "ar": "Arabic"
+      }
+    }
+  },
+  "search": {
+    "watchers": [
+      "/usr/share/applications",
+      "~/.local/share/applications",
+      "/var/lib/flatpak/exports/share"
+    ],
+    "enableFeatures": {
+      "actions": true,
+      "commands": true,
+      "mathResults": true,
+      "directorySearch": true,
+      "aiSearch": true,
+      "webSearch": true
+    },
+    "engineBaseUrl": "https://www.google.com/search?q=",
+    "excludedSites": [
+      "quora.com"
+    ]
+  },
+  "timers": {
+    "presets": [
+      {
+        "name": "Pomodoro",
+        "duration": 1500,
+        "icon": "timer"
+      },
+      {
+        "name": "Short Break",
+        "duration": 300,
+        "icon": "coffee"
+      },
+      {
+        "name": "Long Break",
+        "duration": 900,
+        "icon": "self_improvement"
+      }
+    ]
+  },
+  "time": {
+    "format": "%I:%M",
+    "interval": 5000,
+    "dateFormatLong": "%A, %d/%m",
+    "dateInterval": 5000,
+    "dateFormat": "%d/%m",
+    "verticalCLock": {
+      "showHours": true,
+      "showMinutes": true,
+      "showSeconds": false,
+      "showDayTime": false
+    }
+  },
+  "weather": {
+    "city": "Cairo",
+    "preferredUnit": "C"
+  },
+  "workspaces": {
+    "shown": 10,
+    "style": "chinese"
+  },
+  "dock": {
+    "enabled": true,
+    "hiddenThickness": 7,
+    "dockSize": 36,
+    "pinnedApps": [
+      "zen-browser",
+      "spotube",
+      "github-desktop",
+      "Code",
+      "zeditor",
+      "firefox",
+      "nwg-look",
+      "Obisidian",
+      "steam",
+      "heroic-games-launcher",
+      "org.gnome.Nautilus",
+      "bottles"
+    ],
+    "layer": "top",
+    "monitorExclusivity": true,
+    "searchPinnedAppIcons": true,
+    "trigger": [
+      "client-added",
+      "client-removed"
+    ],
+    "autoHide": [
+      {
+        "trigger": "client-added",
+        "interval": 500
+      },
+      {
+        "trigger": "client-removed",
+        "interval": 500
+      }
+    ]
+  },
+  "icons": {
+    "__custom": [
+      "substitutions",
+      "regexSubstitutions"
+    ],
+    "searchPaths": [
+      ""
+    ],
+    "symbolicIconTheme": {
+      "dark": "Adwaita",
+      "light": "Adwaita"
+    },
+    "substitutions": {
+      "code-url-handler": "code",
+      "Code": "code",
+      "GitHub Desktop": "github-desktop",
+      "Minecraft* 1.20.1": "minecraft",
+      "gnome-tweaks": "org.gnome.tweaks",
+      "pavucontrol-qt": "pavucontrol",
+      "wps": "wps-office2019-kprometheus",
+      "wpsoffice": "wps-office2019-kprometheus",
+      "": "image-missing"
+    },
+    "regexSubstitutions": [
+      {
+        "regex": {},
+        "replace": "steam_icon_$1"
+      }
+    ]
+  },
+  "keybinds": {
+    "overview": {
+      "altMoveLeft": "Ctrl+b",
+      "altMoveRight": "Ctrl+f",
+      "deleteToEnd": "Ctrl+k"
+    },
+    "sidebar": {
+      "prayerTimes": {
+        "city": "Cairo"
+      },
+      "apis": {
+        "nextTab": "Page_Down",
+        "prevTab": "Page_Up"
+      },
+      "options": {
+        "nextTab": "Page_Down",
+        "prevTab": "Page_Up"
+      },
+      "pin": "Ctrl+p",
+      "cycleTab": "Ctrl+Tab",
+      "nextTab": "Ctrl+Page_Down",
+      "prevTab": "Ctrl+Page_Up"
+    },
+    "cheatsheet": {
+      "keybinds": {
+        "nextTab": "Page_Down",
+        "prevTab": "Page_Up"
+      },
+      "nextTab": "Ctrl+Page_Down",
+      "prevTab": "Ctrl+Page_Up",
+      "cycleTab": "Ctrl+Tab"
+    }
+  },
+  "bar": {
+    "position": "top",
+    "traySize": 16,
+    "floatingWidth": 14,
+    "floatingElevation": 1,
+    "verticalBar": {
+      "position": "left"
+    },
+    "pinnedApps": [
+      "windsurf",
+      "heroic",
+      "io.bassi.Amberol",
+      "nwg-look",
+      "org.gnome.Nautilus",
+      "spotify-launcher",
+      "steam"
+    ],
+    "elements": {
+      "showWindowTitle": true,
+      "showWorkspaces": true,
+      "showClock": true,
+      "showIndicators": true,
+      "showUtils": true,
+      "showWeather": true,
+      "showResources": true,
+      "showMusic": true,
+      "showBattery": true,
+      "showAvatar": true
+    }
+  },
+  "etc": {
+    "cava": {
+      "enabled": true
+    },
+    "enableAmberol": true,
+    "nightLightTemp": "6000",
+    "clickCloseRegion": true,
+    "sideLeftPin": true,
+    "cornerRadius": "20",
+    "widgetCorners": true,
+    "todoPath": "Documents/HyprLuna/TODOS.md",
+    "recordingPath": "/Videos/Records",
+    "screencorners": {
+      "debounce": "50",
+      "topleft": "",
+      "topright": "",
+      "bottomleft": "",
+      "bottomright": ""
+    }
+  }
+}
