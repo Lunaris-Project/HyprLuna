@@ -133,7 +133,42 @@ export const GeminiSettings = () => MarginRevealer({
                         desc: getLocalizedString("Saves chat history\nMessages in previous chats won't show automatically, but they are there", "يحفظ تاريخ الدردشة\nلن تظهر الرسائل التي تم إرسالها في الدردشات السابقة لكنها موجودة"),
                         initValue: GeminiService.useHistory,
                         onChange: (self, newValue) => {
-                            GeminiService.useHistory = newValue;
+                            // If we're enabling history
+                            if (newValue) {
+                                console.log('History enabled, loading history...');
+                                
+                                // Set the useHistory value in the service
+                                GeminiService.useHistory = newValue;
+                                
+                                // Clear the UI first
+                                clearChat();
+                                
+                                // Then load the history with a small delay to ensure UI is ready
+                                Utils.timeout(200, () => {
+                                    GeminiService.loadHistory();
+                                });
+                                
+                                // Show a message in the chat
+                                chatContent.add(SystemMessage(getLocalizedString('History enabled. Loading messages from history file...', 'تم تمكين المحفوظات. جاري تحميل الرسائل من ملف المحفوظات...'), 'History', geminiView));
+                            } 
+                            // If we're disabling history
+                            else {
+                                console.log('History disabled.');
+                                
+                                // Save current messages to history before disabling
+                                if (GeminiService._messages.length > 0) {
+                                    GeminiService.saveHistory();
+                                }
+                                
+                                // Use a small timeout to ensure history is saved before disabling
+                                Utils.timeout(500, () => {
+                                    // Set the useHistory value in the service
+                                    GeminiService.useHistory = newValue;
+                                    
+                                    // Show a message in the chat
+                                    chatContent.add(SystemMessage(getLocalizedString('History disabled. New messages will not be saved.', 'تم تعطيل المحفوظات. لن يتم حفظ الرسائل الجديدة.'), 'History', geminiView));
+                                });
+                            }
                         },
                     }),
                     Button({
@@ -339,12 +374,19 @@ export const chatContent = Box({
 });
 
 const clearChat = () => {
-    GeminiService.clear();
+    // Only clear the UI, not the history file
+    console.log('Clearing chat UI only...');
+    
+    // Clear the UI
     const children = chatContent.get_children();
     for (let i = 0; i < children.length; i++) {
         const child = children[i];
         child.destroy();
     }
+    
+    // Clear the messages in the service without affecting the history file
+    GeminiService._messages = [];
+    GeminiService.emit('clear');
 }
 
 const CommandButton = (command) => Button({
@@ -379,10 +421,6 @@ export const sendMessage = (text) => {
     // Commands
     if (text.startsWith('/')) {
         if (text.startsWith('/clear')) clearChat();
-        else if (text.startsWith('/load')) {
-            clearChat();
-            GeminiService.loadHistory();
-        }
         else if (text.startsWith('/model')) chatContent.add(SystemMessage(`${getLocalizedString("Currently using", "حاليًا يستخدم")} \`${GeminiService.modelName}\``, '/model', geminiView))
         else if (text.startsWith('/prompt')) {
             const firstSpaceIndex = text.indexOf(' ');

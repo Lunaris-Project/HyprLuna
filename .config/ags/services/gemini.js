@@ -355,67 +355,17 @@ class GeminiService extends Service {
         const wasUsingHistory = this._usingHistory;
         this._usingHistory = value;
         
-        if (value && !wasUsingHistory) {
-            // If history was just enabled, load it
-            console.log('History enabled, loading from file...');
-            this.loadHistory();
-            console.log('History loaded from file.');
-        } else if (!value && wasUsingHistory) {
-            // If history was just disabled, reinitialize with default messages
-            console.log('History disabled, reinitializing with default messages...');
+        // We don't automatically load history here anymore
+        // That's now handled by the UI toggle button
+        
+        // If history was just disabled, we don't need to reinitialize with default messages
+        // Just keep the current messages in the UI
+        if (!value && wasUsingHistory) {
+            console.log('History disabled, keeping current messages in UI');
             
             // Save current messages to history before switching
-            this.saveHistory();
-            
-            // Reinitialize with default messages and rules
-            if (this._assistantPrompt) {
-                // Start with base init messages
-                const baseMessages = [...initMessages];
-                
-                // Add custom rules to messages with stronger enforcement
-                const customRules = this._rules.filter(rule => rule.enabled);
-                if (customRules.length > 0) {
-                    console.log(`Adding ${customRules.length} active rules to initial messages...`);
-                    
-                    // Add a system message to emphasize rule importance
-                    baseMessages.push({ 
-                        role: "user", 
-                        parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-                    });
-                    baseMessages.push({ 
-                        role: "model", 
-                        parts: [{ text: "I understand. I will follow these rules without exception." }] 
-                    });
-                    
-                    // Add each rule with emphasis
-                    for (const rule of customRules) {
-                        baseMessages.push({ 
-                            role: "user", 
-                            parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                        });
-                        baseMessages.push({ 
-                            role: "model", 
-                            parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                        });
-                    }
-                    
-                    // Final confirmation of rules
-                    baseMessages.push({ 
-                        role: "user", 
-                        parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-                    });
-                    baseMessages.push({ 
-                        role: "model", 
-                        parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-                    });
-                } else {
-                    console.log('No active rules to add to initial messages.');
-                }
-                
-                this._messages = baseMessages;
-            } else {
-                console.log('Assistant prompt disabled, starting with empty messages.');
-                this._messages = [];
+            if (this._messages.length > 0) {
+                this.saveHistory();
             }
         }
     }
@@ -495,22 +445,22 @@ class GeminiService extends Service {
 
     loadHistory() {
         // Prevent multiple simultaneous loads
-        if (this._isLoadingHistory || this._hasLoadedHistory) return;
+        if (this._isLoadingHistory) return;
         this._isLoadingHistory = true;
         
         try {
-        if (!this.checkHistoryFile()) {
-            this._messages = [];
-            this._usingHistory = true;
+            if (!this.checkHistoryFile()) {
+                this._messages = [];
+                this._usingHistory = true;
                 this._hasLoadedHistory = true;
                 // Emit both signals to ensure UI updates
                 this.emit('historyLoaded');
                 if (this._messages.length > 0) {
                     this.emit('newMsg', this._messages.length - 1);
                 }
-            return;
-        }
-        
+                return;
+            }
+            
             // Read the history file content
             const historyContent = Utils.readFile(HISTORY_PATH);
             console.log(`Loading history from ${HISTORY_PATH}, content length: ${historyContent.length}`);
@@ -520,9 +470,9 @@ class GeminiService extends Service {
             
             // Only clear and reload if we have valid data
             if (Array.isArray(historyData)) {
-        // Clear existing messages
-        this._messages = [];
-        
+                // Clear existing messages
+                this._messages = [];
+                
                 if (historyData.length > 0) {
                     // Add all messages without emitting signals
                     historyData.forEach((element, index) => {
@@ -642,18 +592,16 @@ class GeminiService extends Service {
         }
     }
 
-    clear() {
-        console.log('Clearing conversation...');
+    // Method to clear only the UI without affecting the history file
+    clearUI() {
+        console.log('Clearing conversation UI only...');
         
-        // If using history, save an empty array to the history file
-        if (this._usingHistory) {
-            console.log('History is enabled, clearing history file...');
-            Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR} && touch ${HISTORY_PATH}'`);
-            Utils.writeFile('[]', HISTORY_PATH);
-            this._messages = [];
-        } 
+        // Just clear the messages array and emit the clear signal
+        // This will only affect the UI, not the history file
+        this._messages = [];
+        
         // If not using history, initialize with default messages and rules
-        else if (this._assistantPrompt) {
+        if (!this._usingHistory && this._assistantPrompt) {
             console.log('History is disabled, initializing with default messages and rules...');
             // Start with base init messages
             const baseMessages = [...initMessages];
@@ -694,17 +642,12 @@ class GeminiService extends Service {
                     role: "model", 
                     parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
                 });
-            } else {
-                console.log('No active rules to add to initial messages.');
+                
+                this._messages = baseMessages;
             }
-            
-            this._messages = baseMessages;
-        } else {
-            console.log('Assistant prompt disabled, starting with empty messages.');
-            this._messages = [];
         }
         
-        console.log('Conversation cleared.');
+        console.log('Conversation UI cleared.');
         this.emit('clear');
     }
 
@@ -1109,8 +1052,8 @@ class GeminiService extends Service {
 
     // Helper method to initialize messages with rules
     initializeMessages() {
-        // If using history and not already loaded, load from history file
-        if (this._usingHistory && !this._hasLoadedHistory) {
+        // If using history, load from history file
+        if (this._usingHistory) {
             this.loadHistory();
             return;
         }
@@ -1159,7 +1102,7 @@ class GeminiService extends Service {
                     return GLib.SOURCE_REMOVE;
                 });
             }
-                        } else {
+        } else {
             this._messages = [];
         }
     }
@@ -1182,8 +1125,8 @@ class GeminiService extends Service {
             console.log(`History file does not exist, creating empty file`);
             Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR}'`);
             Utils.writeFile('[]', HISTORY_PATH);
-                        return false;
-                    }
+            return false;
+        }
         
         try {
             const historyContent = Utils.readFile(HISTORY_PATH);
@@ -1192,8 +1135,8 @@ class GeminiService extends Service {
             if (!historyContent || historyContent.trim() === '') {
                 console.log(`History file is empty, initializing with empty array`);
                 Utils.writeFile('[]', HISTORY_PATH);
-                    return false;
-                }
+                return false;
+            }
             
             const historyData = JSON.parse(historyContent);
             if (!Array.isArray(historyData)) {
@@ -1206,7 +1149,11 @@ class GeminiService extends Service {
             return true;
         } catch (error) {
             console.error(`Error validating history file: ${error}`);
-            Utils.writeFile('[]', HISTORY_PATH);
+            // Don't overwrite the history file if there's an error
+            // Just create an empty array if it doesn't exist
+            if (!fileExists(HISTORY_PATH)) {
+                Utils.writeFile('[]', HISTORY_PATH);
+            }
             return false;
         }
     }
@@ -1320,6 +1267,72 @@ class GeminiService extends Service {
         this.loadRules();
         
         return this;
+    }
+
+    clear() {
+        console.log('Clearing conversation...');
+        
+        // If using history, save an empty array to the history file
+        if (this._usingHistory) {
+            console.log('History is enabled, clearing history file...');
+            Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR} && touch ${HISTORY_PATH}'`);
+            Utils.writeFile('[]', HISTORY_PATH);
+            this._messages = [];
+        } 
+        // If not using history, initialize with default messages and rules
+        else if (this._assistantPrompt) {
+            console.log('History is disabled, initializing with default messages and rules...');
+            // Start with base init messages
+            const baseMessages = [...initMessages];
+            
+            // Add custom rules to messages with stronger enforcement
+            const customRules = this._rules.filter(rule => rule.enabled);
+            if (customRules.length > 0) {
+                console.log(`Adding ${customRules.length} active rules to initial messages...`);
+                
+                // Add a system message to emphasize rule importance
+                baseMessages.push({ 
+                    role: "user", 
+                    parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
+                });
+                baseMessages.push({ 
+                    role: "model", 
+                    parts: [{ text: "I understand. I will follow these rules without exception." }] 
+                });
+                
+                // Add each rule with emphasis
+                for (const rule of customRules) {
+                    baseMessages.push({ 
+                        role: "user", 
+                        parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
+                    });
+                    baseMessages.push({ 
+                        role: "model", 
+                        parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
+                    });
+                }
+                
+                // Final confirmation of rules
+                baseMessages.push({ 
+                    role: "user", 
+                    parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
+                });
+                baseMessages.push({ 
+                    role: "model", 
+                    parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
+                });
+            } else {
+                console.log('No active rules to add to initial messages.');
+            }
+            
+            this._messages = baseMessages;
+        } else {
+            console.log('Assistant prompt disabled, starting with empty messages.');
+            this._messages = [];
+        }
+        
+        console.log('Conversation cleared.');
+        this.emit('clear');
     }
 }
 
