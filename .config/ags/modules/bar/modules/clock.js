@@ -52,17 +52,18 @@ const musicRevealer = RevealerState.register(Revealer({
   transitionDuration: options.animations.durationLarge,
   transition: "slide_right",
   revealChild: false,
-  child:  fetcher(),
+  child: fetcher(),
 }));
 
-export default () =>
+export default (props = {}) =>
   Widget.EventBox({
+    ...props,
     onPrimaryClick: () => musicRevealer.revealChild = !musicRevealer.revealChild,
     onSecondaryClick: () => App.toggleWindow("wallselect"),
     onMiddleClick: () => {
       Utils.execAsync(["hyprpicker", "-a"]).catch(print);
     },
     child: Widget.Box({
-      children: [BarClock(), ],
+      children: [BarClock(),],
     }),
   });

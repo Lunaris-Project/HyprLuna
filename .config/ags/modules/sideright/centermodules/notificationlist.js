@@ -1,6 +1,3 @@
-// This file is for the notification list on the sidebar
-// For the popup notifications, see onscreendisplay.js
-// The actual widget for each single notification is in ags/modules/.commonwidgets/notification.js
 const { Pango } = imports.gi;
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import Notifications from 'resource:///com/github/Aylur/ags/service/notifications.js';
@@ -13,21 +10,22 @@ import { ConfigToggle } from '../../.commonwidgets/configwidgets.js';
 export default (props) => {
     const notifEmptyContent = Box({
         homogeneous: true,
-        children: [Box({
-            vertical: true,
-            vpack: 'center',
-            className: 'txt spacing-v-10',
-            children: [
-                Box({
-                    vertical: true,
-                    className: 'spacing-v-5 txt-subtext',
-                    children: [
-                        MaterialIcon('notifications_active', 'gigantic'),
-                        Label({ label: getString('No notifications'), className: 'txt-small', wrapMode: Pango.WrapMode.WORD_CHAR, }),
-                    ]
-                }),
-            ]
-        })]
+        children: [
+            Box({
+                vertical: true,
+                vpack: 'center',
+                className: 'txt spacing-v-10',
+                children: [
+                    Box({
+                        vertical: true,
+                        className: 'spacing-v-5 txt-subtext',
+                        children: [
+                            MaterialIcon('notifications_active', 'gigantic'),
+                            Label({ label: getString('No notifications'), className: 'txt-small', wrapMode: Pango.WrapMode.WORD_CHAR, }),
+                        ]
+                    }),
+                ]
+            })]
     });
     const notificationList = Box({
         vertical: true,

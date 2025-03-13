@@ -29,12 +29,12 @@
     "visible": false
   },
   "ai": {
-    "defaultGPTProvider": "deepseek-r1",
-    "onSearch": "deepseek-r1",
+    "defaultGPTProvider": "microsoft-phi-4",
+    "onSearch": "microsoft-phi-4",
     "defaultTemperature": 0.9,
     "enhancements": true,
     "useHistory": true,
-    "useInitMessages": false,
+    "useInitMessages": true,
     "safety": true,
     "writingCursor": " ...",
     "proxyUrl": "",
@@ -61,7 +61,7 @@
     },
     "layerSmoke": false,
     "layerSmokeStrength": 0.2,
-    "fakeScreenRounding": 1
+    "fakeScreenRounding": true
   },
   "apps": {
     "bluetooth": "overskride",
@@ -128,9 +128,9 @@
     "siderightTheme": "sideright_bottom",
     "ModuleCalendar": {
       "enabled": true,
-      "visible": true
+      "visible": false
     },
-    "showAnimeCat": true,
+    "showAnimeCat": false,
     "centerModules": {
       "enabled": [
         "vpnGate",
@@ -152,25 +152,25 @@
         "enabled": true
       },
       "powerProfiles": {
-        "enabled": true
+        "enabled": false
       },
       "taskManager": {
-        "enabled": true,
+        "enabled": false,
         "pollingRate": 5000
       },
       "bluetooth": {
         "enabled": true
       },
       "wifiNetworks": {
-        "enabled": true
+        "enabled": false
       },
       "prayerTimes": {
-        "enabled": true
+        "enabled": false
       }
     },
     "github": {
-      "repoOwner": "Lunaris-Project",
-      "repoName": "HyprLuna"
+      "repoOwner": "pharmaracist",
+      "repoName": "HyprNoon"
     },
     "ai": {
       "medicalDictionary": {
@@ -225,15 +225,6 @@
           "key_get_url": "https://openrouter.ai/keys",
           "key_file": "openrouter_key.txt",
           "model": "microsoft/phi-4"
-        },
-        "deepseek-r1": {
-          "name": "DeepSeek R1",
-          "logo_name": "openrouter-symbolic",
-          "description": "DeepSeek R1 via OpenRouter",
-          "base_url": "https://openrouter.ai/api/v1/chat/completions",
-          "key_get_url": "https://openrouter.ai/keys",
-          "key_file": "openrouter_key.txt",
-          "model": "deepseek/deepseek-r1"
         }
       },
       "initMessages": []
@@ -319,6 +310,7 @@
   },
   "weather": {
     "city": "Cairo",
+    "country": "Egypt",
     "preferredUnit": "C"
   },
   "workspaces": {
@@ -345,7 +337,7 @@
     ],
     "layer": "top",
     "monitorExclusivity": true,
-    "searchPinnedAppIcons": true,
+    "searchPinnedAppIcons": false,
     "trigger": [
       "client-added",
       "client-removed"
@@ -458,13 +450,13 @@
     "cava": {
       "enabled": true
     },
-    "enableAmberol": true,
+    "enableAmberol": false,
     "nightLightTemp": "6000",
     "clickCloseRegion": true,
     "sideLeftPin": true,
     "cornerRadius": "20",
     "widgetCorners": true,
-    "todoPath": "Documents/HyprLuna/TODOS.md",
+    "todoPath": "/mnt/Data/General-Archive/obsidian/HyprNoon.md",
     "recordingPath": "/Videos/Records",
     "screencorners": {
       "debounce": "50",

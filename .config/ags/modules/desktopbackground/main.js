@@ -3,6 +3,7 @@ import WallpaperImage from "./wallpaper.js";
 import SystemWidget from "./onscreenwidgets/system.js";
 import Normal from "./onscreenwidgets/simpleclock.js";
 import Auva from "./onscreenwidgets/auva.js";
+import ModuleNotificationList from "./onscreenwidgets/notificationlist.js";
 // import { zaWiseCat } from "./onscreenwidgets/zaWizeCat.js";
 
 export default (monitor) =>
@@ -24,6 +25,22 @@ export default (monitor) =>
             userOptions.asyncGet().desktopBackground.enableWisecat ? Widget.Box({ vertical: true, children: [zaWiseCat, Widget.Box({ vexpand: true })] }) : null
           ],
         }),
+        Widget.Box({
+          hpack: 'end',
+          hexpand: true,
+          children: [
+            ModuleNotificationList({
+              hexpand: true,
+              hpack: 'end',
+              vpack: 'center',
+              css: `
+              min-height:45rem;
+              min-width:24rem;
+              margin-right:3rem
+              `
+            })
+          ]
+        })
       ],
       setup: (self) => {
         self.set_overlay_pass_through(self.get_children()[1], true);

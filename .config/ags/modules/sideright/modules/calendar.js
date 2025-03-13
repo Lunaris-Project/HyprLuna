@@ -176,15 +176,15 @@ const contentStack = Widget.Stack({
   },
   transition: "slide_up_down",
   transitionDuration: userOpts.animations.durationLarge,
-  // setup: (stack) => {
-  //   Utils.timeout(1, () => (stack.shown = defaultShown));
-  //   userOptions.subscribe(newOpts => {
-  //     userOpts = newOpts;
-  //     if (!newOpts.muslim?.enabled && stack.shown === "PrayerTimes") {
-  //       stack.shown = "calendar";
-  //     }
-  //   });
-  // },
+  setup: (stack) => {
+    Utils.timeout(1, () => (stack.shown = defaultShown));
+    userOptions.subscribe(newOpts => {
+      userOpts = newOpts;
+      if (!newOpts.muslim?.enabled && stack.shown === "PrayerTimes") {
+        stack.shown = "calendar";
+      }
+    });
+  },
 });
 
 const StackButton = (stackItemName, icon, name) =>

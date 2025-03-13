@@ -37,6 +37,14 @@ $bar_ws_width_focus_active: 6.045rem;
     border-bottom: 0.6px solid $outliner
 }
 
+.notification-active {
+    @include fluent_decel_long;
+    min-height: 4rem;
+    min-width: 26.1rem;
+    border-radius: 0 0 $rounding_mediumlarge $rounding_mediumlarge;
+    border-bottom: 0.6px solid $outliner
+}
+
 .bar-resources {
     progressbar {
         @include element_decel;

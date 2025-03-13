@@ -5,169 +5,15 @@ import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Soup from 'gi://Soup?version=3.0';
 import { fileExists } from '../modules/.miscutils/files.js';
+import Gst from 'gi://Gst'; // GStreamer for audio capture/playback
 
-const HISTORY_DIR = `${GLib.get_home_dir()}/.ags/ai/`;
+// Initialize GStreamer
+Gst.init(null);
+
+const HISTORY_DIR = `${GLib.get_user_state_dir()}/ags/user/ai/chats/`;
 const HISTORY_FILENAME = `gemini.txt`;
 const HISTORY_PATH = HISTORY_DIR + HISTORY_FILENAME;
-const RULES_DIR = `${GLib.get_home_dir()}/.ags/ai/`;
-const RULES_JSON_PATH = `${RULES_DIR}/rules.json`;
-const RULES_TXT_PATH = `${RULES_DIR}/rules.txt`;
-
-// Create directories silently
-Utils.exec(`mkdir -p ${RULES_DIR}`);
-Utils.exec(`mkdir -p ${HISTORY_DIR}`);
-
-// Initialize history file if it doesn't exist
-if (!fileExists(HISTORY_PATH)) {
-    console.log(`Initializing history file at ${HISTORY_PATH}`);
-    Utils.writeFile('[]', HISTORY_PATH).catch(print);
-}
-
-// Initialize rules files if they don't exist
-if (!fileExists(RULES_JSON_PATH)) {
-    Utils.writeFile('[]', RULES_JSON_PATH).catch(print);
-}
-
-if (!fileExists(RULES_TXT_PATH)) {
-    Utils.writeFile('', RULES_TXT_PATH).catch(print);
-}
-
-// Set up file monitors for rules files
-const jsonFileMonitor = Utils.monitorFile(RULES_JSON_PATH, (file, event) => {
-    if (event === 1) { // GFileMonitorEvent.CHANGED
-        console.log('Rules JSON file changed, reloading rules...');
-        const geminiService = globalThis['geminiService'];
-        if (geminiService) {
-            const success = geminiService.reloadRules();
-            if (success) {
-                // Show notification for rule changes
-                geminiService.showNotification('Rules updated', 'Your rules have been reloaded from file.');
-            }
-        }
-    }
-});
-
-const txtFileMonitor = Utils.monitorFile(RULES_TXT_PATH, (file, event) => {
-    if (event === 1) { // GFileMonitorEvent.CHANGED
-        console.log('Rules TXT file changed, reloading rules...');
-        const geminiService = globalThis['geminiService'];
-        if (geminiService) {
-            const success = geminiService.reloadRules();
-            if (success) {
-                // Show notification for rule changes
-                geminiService.showNotification('Rules updated', 'Your rules have been reloaded from file.');
-            }
-        }
-    }
-});
-
-// Set up file monitor for history file
-const historyFileMonitor = Utils.monitorFile(HISTORY_PATH, (file, event) => {
-    if (event === 1) { // GFileMonitorEvent.CHANGED
-        const geminiService = globalThis['geminiService'];
-        if (geminiService && geminiService._usingHistory) {
-            // Only reload if not currently saving
-            if (!geminiService._saveTimeout) {
-                geminiService.reloadHistory();
-            }
-        }
-    }
-});
-
-// Ensure monitors are active by storing them in the global scope
-globalThis['geminiMonitors'] = {
-    jsonFileMonitor,
-    txtFileMonitor,
-    historyFileMonitor
-};
-
-// Function to check if monitors are active
-function checkMonitors() {
-    console.log('Checking file monitors status:');
-    console.log(`- Rules JSON monitor: ${globalThis['geminiMonitors'].jsonFileMonitor ? 'Active' : 'Inactive'}`);
-    console.log(`- Rules TXT monitor: ${globalThis['geminiMonitors'].txtFileMonitor ? 'Active' : 'Inactive'}`);
-    console.log(`- History monitor: ${globalThis['geminiMonitors'].historyFileMonitor ? 'Active' : 'Inactive'}`);
-}
-
-// Log monitor status on startup
-Utils.timeout(1000, () => {
-    checkMonitors();
-});
-
-// Function to read rules from JSON file
-function readRulesFromJson() {
-    try {
-        if (fileExists(RULES_JSON_PATH)) {
-            return JSON.parse(Utils.readFile(RULES_JSON_PATH));
-        }
-        return [];
-    } catch (e) {
-        console.error('Error reading rules.json:', e);
-        return [];
-    }
-}
-
-// Function to read rules from TXT file
-function readRulesFromTxt() {
-    try {
-        if (fileExists(RULES_TXT_PATH)) {
-            const content = Utils.readFile(RULES_TXT_PATH);
-            return content.split('\n').filter(line => line.trim() !== '');
-        }
-        return [];
-    } catch (e) {
-        console.error('Error reading rules.txt:', e);
-        return [];
-    }
-}
-
-// Function to save rules to JSON file
-function saveRulesToJson(rules) {
-    try {
-        Utils.writeFile(JSON.stringify(rules, null, 2), RULES_JSON_PATH).catch(print);
-    } catch (e) {
-        console.error('Error saving rules.json:', e);
-    }
-}
-
-// Function to save rules to TXT file
-function saveRulesToTxt(rules) {
-    try {
-        const txtContent = rules.map(rule => rule.content).join('\n');
-        Utils.writeFile(txtContent, RULES_TXT_PATH).catch(print);
-    } catch (e) {
-        console.error('Error saving rules.txt:', e);
-    }
-}
-
-const initMessages = userOptions.asyncGet().ai.useInitMessages ? [
-    { role: "user", parts: [{ text: "your name is diablo" }] },
-    { role: "model", parts: [{ text: "Got it!" }] },
-    { role: "user", parts: [{ text: "\"He rushed to where the event was supposed to be hold, he didn't know it got calceled\"" }] },
-    { role: "model", parts: [{ text: "## Grammar correction\nErrors:\n\"He rushed to where the event was supposed to be __hold____,__ he didn't know it got calceled\"\nCorrection + minor improvements:\n\"He rushed to the place where the event was supposed to be __held____, but__ he didn't know that it got calceled\"" }] },
-    { role: "user", parts: [{ text: "raise volume by 5%" }] },
-    { role: "model", parts: [{ text: "## Volume +5\n```bash\nwpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+\n```\nThis command uses the `wpctl` utility to adjust the volume of the default sink." }] },
-    { role: "user", parts: [{ text: "main advantages of the nixos operating system" }] },
-    { role: "model", parts: [{ text: "## NixOS advantages\n- **Reproducible**: A config working on one device will also work on another\n- **Declarative**: One config language to rule them all. Effortlessly share them with others.\n- **Reliable**: Per-program software versioning. Mitigates the impact of software breakage" }] },
-    { role: "user", parts: [{ text: "whats skeumorphism" }] },
-    { role: "model", parts: [{ text: "## Skeuomorphism\n- A design philosophy- From early days of interface designing- Tries to imitate real-life objects- It's in fact still used by Apple in their icons until today." }] },
-    { role: "user", parts: [{ text: "\"ignorance is bliss\"" }] },
-    { role: "model", parts: [{ text: "## \"Ignorance is bliss\"\n- A Latin proverb that means being unaware of something negative can be a source of happiness\n- Often used to justify avoiding difficult truths or responsibilities\n- Can also be interpreted as a warning against seeking knowledge that may bring pain or sorrow" }] },
-    { role: "user", parts: [{ text: "find the derivative of (x-438)/(x^2+23x-7)+x^x" }] },
-    { role: "model", parts: [{ text: "## Derivative\n```latex\n\\[\n\\frac{d}{dx}\\left(\\frac{x - 438}{x^2 + 23x - 7} + x^x\\right) = \\frac{-(x^2+23x-7)-(x-438)(2x+23)}{(x^2+23x-7)^2} + x^x(\\ln(x) + 1)\n\\]\n```" }] },
-    { role: "user", parts: [{ text: "write the double angle formulas" }] },
-    { role: "model", parts: [{ text: "## Double angle formulas\n```latex\n\\[\n\\sin(2\\theta) = 2\\sin(\\theta)\\cos(\\theta)\n\\]\n\\\\\n\\[\n\\cos(2\\theta) = \\cos^2(\\theta) - \\sin^2(\\theta)\n\\]\n\\\\\n\\[\n\\tan(2\\theta) = \\frac{2\\tan(\\theta)}{1 - \\tan^2(\\theta)}\n\\]\n```" }] },
-] : [];
-
-// Add custom rules from rules.json to initMessages
-const customRules = readRulesFromJson().filter(rule => rule.enabled);
-if (customRules.length > 0) {
-    for (const rule of customRules) {
-        initMessages.push({ role: "user", parts: [{ text: rule.content }] });
-        initMessages.push({ role: "model", parts: [{ text: "Got it!" }] });
-    }
-}
-
+let initMessages = []
 if (!fileExists(`${GLib.get_user_config_dir()}/gemini_history.json`)) {
     Utils.execAsync([`bash`, `-c`, `touch ${GLib.get_user_config_dir()}/gemini_history.json`]).catch(print);
     Utils.writeFile('[ ]', `${GLib.get_user_config_dir()}/gemini_history.json`).catch(print);
@@ -283,9 +129,6 @@ class GeminiService extends Service {
             'clear': [],
             'newMsg': ['int'],
             'hasKey': ['boolean'],
-            'rulesChanged': [], // Signal for rule changes
-            'historyChanged': [], // Signal for history changes
-            'historyLoaded': [], // New signal for initial history load
         });
     }
 
@@ -299,14 +142,6 @@ class GeminiService extends Service {
     _messages = [];
     _modelIndex = 0;
     _decoder = new TextDecoder();
-    _rules = readRulesFromJson();
-    _saveTimeout = null;
-    _lastSaveContent = '';
-    _lastUserMessage = '';
-    _sendInProgress = false;
-    _isInitialized = false;
-    _isLoadingHistory = false;
-    _hasLoadedHistory = false;
 
     constructor() {
         super();
@@ -316,16 +151,9 @@ class GeminiService extends Service {
         else
             this.emit('hasKey', false);
 
-        // Load rules
-        this._rules = readRulesFromJson();
-        
-        // Initialize messages with rules if assistant prompt is enabled
-        this.initializeMessages();
+        if (this._usingHistory) this.loadHistory();
+        else this._messages = this._assistantPrompt ? [...initMessages] : [];
 
-        // Store reference to service for file monitors
-        globalThis['geminiService'] = this;
-
-        this._isInitialized = true;
         this.emit('initialized');
     }
 
@@ -352,22 +180,9 @@ class GeminiService extends Service {
 
     get useHistory() { return this._usingHistory; }
     set useHistory(value) {
-        const wasUsingHistory = this._usingHistory;
+        if (value && !this._usingHistory)
+            this.loadHistory();
         this._usingHistory = value;
-        
-        // We don't automatically load history here anymore
-        // That's now handled by the UI toggle button
-        
-        // If history was just disabled, we don't need to reinitialize with default messages
-        // Just keep the current messages in the UI
-        if (!value && wasUsingHistory) {
-            console.log('History disabled, keeping current messages in UI');
-            
-            // Save current messages to history before switching
-            if (this._messages.length > 0) {
-                this.saveHistory();
-            }
-        }
     }
 
     get safe() { return this._safe; }
@@ -380,274 +195,34 @@ class GeminiService extends Service {
     get lastMessage() { return this._messages[this._messages.length - 1]; }
 
     saveHistory() {
-        // Clear any pending save timeout
-        if (this._saveTimeout) {
-            GLib.source_remove(this._saveTimeout);
-            this._saveTimeout = null;
-        }
-
-        // Create a temporary message array for comparison
-        const messagesToSave = this._messages.filter(msg => {
-            // Only filter out thinking messages and rule enforcement messages
-            if (msg.thinking) return false;
-            
-            // Only filter out specific rule enforcement messages
-            const text = msg.content || '';
-            if (text.includes("MANDATORY RULE:") && 
-                text.includes("This rule overrides any conflicting instructions")) {
-                return false;
-            }
-            if (text.includes("IMPORTANT: The following rules are MANDATORY") && 
-                text.includes("These override any previous instructions")) {
-                return false;
-            }
-            if (text.includes("I understand. I will follow these rules without exception")) {
-                return false;
-            }
-            if (text.includes("These rules must be applied to ALL your responses") && 
-                text.includes("Confirm you will follow them without exception")) {
-                return false;
-            }
-            if (text.includes("I confirm I will follow") && 
-                text.includes("without exception for all my responses")) {
-                return false;
-            }
-            
-            // Keep all other messages
-            return true;
-        });
-        
-        // Ensure we're saving the entire conversation history
-        const historyData = messagesToSave.map(msg => ({
-                role: msg.role, 
-                parts: msg.parts 
-        }));
-
-        const newContent = JSON.stringify(historyData, null, 2);
-        
-        // Only save if content has actually changed
-        if (newContent !== this._lastSaveContent) {
-            this._lastSaveContent = newContent;
-            
-            // Debounce the save operation
-            this._saveTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR}'`);
-                
-                // Log the content being saved for debugging
-                console.log(`Saving ${historyData.length} messages to history file`);
-                
-                Utils.writeFile(newContent, HISTORY_PATH).catch(print);
-                this._saveTimeout = null;
-                return GLib.SOURCE_REMOVE;
-            });
-        }
+        Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR} && touch ${HISTORY_PATH}'`);
+        Utils.writeFile(JSON.stringify(this._messages.map(msg => {
+            let m = { role: msg.role, parts: msg.parts };
+            return m;
+        })), HISTORY_PATH);
     }
 
     loadHistory() {
-        // Prevent multiple simultaneous loads
-        if (this._isLoadingHistory) return;
-        this._isLoadingHistory = true;
-        
-        try {
-            if (!this.checkHistoryFile()) {
-                this._messages = [];
-                this._usingHistory = true;
-                this._hasLoadedHistory = true;
-                // Emit both signals to ensure UI updates
-                this.emit('historyLoaded');
-                if (this._messages.length > 0) {
-                    this.emit('newMsg', this._messages.length - 1);
-                }
-                return;
-            }
-            
-            // Read the history file content
-            const historyContent = Utils.readFile(HISTORY_PATH);
-            console.log(`Loading history from ${HISTORY_PATH}, content length: ${historyContent.length}`);
-            
-            const historyData = JSON.parse(historyContent);
-            console.log(`Parsed ${historyData.length} messages from history file`);
-            
-            // Only clear and reload if we have valid data
-            if (Array.isArray(historyData)) {
-                // Clear existing messages
-                this._messages = [];
-                
-                if (historyData.length > 0) {
-                    // Add all messages without emitting signals
-                    historyData.forEach((element, index) => {
-                        if (element?.role && element?.parts?.[0]?.text) {
-                            // Use direct array push instead of addMessage to avoid recursive saves
-                            this._messages.push(new GeminiMessage(element.role, element.parts[0].text, false));
-                        }
-                    });
-                    
-                    console.log(`Loaded ${this._messages.length} messages into memory`);
-                    
-                    // Emit signals after all messages are loaded
-                    if (this._messages.length > 0) {
-                        // Use a timeout to ensure UI is ready
-                        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                            // Emit historyLoaded signal first
-                            this.emit('historyLoaded');
-                            
-                            // Then emit newMsg signal for each message to ensure they all appear in the UI
-                            console.log(`Emitting newMsg signals for ${this._messages.length} messages`);
-                            this._messages.forEach((_, index) => {
-                                this.emit('newMsg', index);
-                            });
-                            
-                            return GLib.SOURCE_REMOVE;
-                        });
-                    }
-                }
-            }
-            
-            this._usingHistory = true;
-            this._hasLoadedHistory = true;
-        } catch (error) {
-            console.error('Error loading history:', error);
-            this._messages = [];
-            this._hasLoadedHistory = true;
-            // Emit both signals to ensure UI updates
-            this.emit('historyLoaded');
-            if (this._messages.length > 0) {
-                this.emit('newMsg', this._messages.length - 1);
-            }
-        } finally {
-            this._isLoadingHistory = false;
-        }
-    }
-
-    // Method to reload history from file
-    reloadHistory() {
-        if (!this._usingHistory) return false;
-        if (this._isLoadingHistory) return false;
-        if (this._saveTimeout) return false; // Don't reload if we're currently saving
-        
-        try {
-            const oldMessagesJson = JSON.stringify(this._messages.map(msg => ({ role: msg.role, content: msg.content })));
-            
-            this._isLoadingHistory = true;
-            if (!this.checkHistoryFile()) {
-                this._isLoadingHistory = false;
-                return false;
-            }
-            
-            // Read the history file content
-            const historyContent = Utils.readFile(HISTORY_PATH);
-            console.log(`Reloading history from ${HISTORY_PATH}, content length: ${historyContent.length}`);
-            
-            const historyData = JSON.parse(historyContent);
-            console.log(`Parsed ${historyData.length} messages from history file for reload`);
-            
-            if (Array.isArray(historyData)) {
-                // Create a new messages array
-                const newMessages = [];
-                
-                // Load all messages from history
-                historyData.forEach(element => {
-                    if (element?.role && element?.parts?.[0]?.text) {
-                        newMessages.push(new GeminiMessage(element.role, element.parts[0].text, false));
-                    }
-                });
-                
-                console.log(`Reloaded ${newMessages.length} messages into memory`);
-                
-                // Compare old and new messages
-                const newMessagesJson = JSON.stringify(newMessages.map(msg => ({ role: msg.role, content: msg.content })));
-                
-                if (oldMessagesJson !== newMessagesJson) {
-                    // Only update if there are actual changes
-                    this._messages = newMessages;
-                    
-                    // Emit signals after all messages are loaded
-                    if (this._messages.length > 0) {
-                        // Use a timeout to ensure UI is ready
-                        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                            // Emit historyChanged signal first
-                            this.emit('historyChanged');
-                            
-                            // Then emit newMsg signal for each message to ensure they all appear in the UI
-                            console.log(`Emitting newMsg signals for ${this._messages.length} messages`);
-                            this._messages.forEach((_, index) => {
-                                this.emit('newMsg', index);
-                            });
-                            
-                            return GLib.SOURCE_REMOVE;
-                        });
-                    }
-                    
-                    this._isLoadingHistory = false;
-                    return true;
-                }
-            }
-            
-            this._isLoadingHistory = false;
-            return false;
-        } catch (e) {
-            console.error('Error reloading history:', e);
-            this._isLoadingHistory = false;
-            return false;
-        }
-    }
-
-    // Method to clear only the UI without affecting the history file
-    clearUI() {
-        console.log('Clearing conversation UI only...');
-        
-        // Just clear the messages array and emit the clear signal
-        // This will only affect the UI, not the history file
         this._messages = [];
-        
-        // If not using history, initialize with default messages and rules
-        if (!this._usingHistory && this._assistantPrompt) {
-            console.log('History is disabled, initializing with default messages and rules...');
-            // Start with base init messages
-            const baseMessages = [...initMessages];
-            
-            // Add custom rules to messages with stronger enforcement
-            const customRules = this._rules.filter(rule => rule.enabled);
-            if (customRules.length > 0) {
-                console.log(`Adding ${customRules.length} active rules to initial messages...`);
-                
-                // Add a system message to emphasize rule importance
-                baseMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-                });
-                baseMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: "I understand. I will follow these rules without exception." }] 
-                });
-                
-                // Add each rule with emphasis
-                for (const rule of customRules) {
-                    baseMessages.push({ 
-                        role: "user", 
-                        parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                    });
-                    baseMessages.push({ 
-                        role: "model", 
-                        parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                    });
-                }
-                
-                // Final confirmation of rules
-                baseMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-                });
-                baseMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-                });
-                
-                this._messages = baseMessages;
-            }
+        this.appendHistory();
+        this._usingHistory = true;
+    }
+
+    appendHistory() {
+        if (fileExists(HISTORY_PATH)) {
+            const readfile = Utils.readFile(HISTORY_PATH);
+            JSON.parse(readfile).forEach(element => {
+                this.addMessage(element.role, element.parts[0].text);
+            });
+        } else {
+            this._messages = this._assistantPrompt ? [...initMessages] : [];
         }
-        
-        console.log('Conversation UI cleared.');
+    }
+
+    clear() {
+        this._messages = this._assistantPrompt ? [...initMessages] : [];
+        if (this._usingHistory)
+            this.saveHistory();
         this.emit('clear');
     }
 
@@ -678,12 +253,8 @@ class GeminiService extends Service {
                     this.readResponse(stream, aiResponse);
                 } catch {
                     aiResponse.done = true;
-                    
-                    // Save history after AI response is complete
-                    if (this._usingHistory) {
+                    if (this._usingHistory)
                         this.saveHistory();
-                    }
-                    
                     return;
                 }
             });
@@ -692,93 +263,17 @@ class GeminiService extends Service {
     addMessage(role, message) {
         this._messages.push(new GeminiMessage(role, message, false));
         this.emit('newMsg', this._messages.length - 1);
-        
-        // Save history after adding a message, but only if using history
-        if (this._usingHistory) {
-            this.saveHistory();
-        }
     }
 
     send(msg) {
-        // Prevent duplicate sends or rapid re-sends of the same message
-        if (this._sendInProgress || msg === this._lastUserMessage) {
-            console.log(`Ignoring duplicate send request for message: ${msg}`);
-            return;
-        }
-        
-        console.log(`Processing new message: ${msg}`);
-        this._sendInProgress = true;
-        this._lastUserMessage = msg;
-
-        // Add user message
-        const userMessage = new GeminiMessage('user', msg, false);
-        this._messages.push(userMessage);
+        this._messages.push(new GeminiMessage('user', msg, false));
         this.emit('newMsg', this._messages.length - 1);
-        
-        // Save history immediately after adding user message
-        if (this._usingHistory) {
-            console.log(`Saving history after adding user message`);
-            this.saveHistory();
-        }
-        
         const aiResponse = new GeminiMessage('model', 'thinking...', true, false);
 
-        // Create a temporary message array that includes active rules at the beginning
-        let tempMessages = [];
-        
-        // Start with base init messages if using assistant prompt and not using history
-        if (this._assistantPrompt && !this._usingHistory) {
-            tempMessages = [...initMessages];
-        }
-        
-        // Add active rules to the conversation with stronger enforcement
-        const activeRules = this._rules.filter(rule => rule.enabled);
-        if (activeRules.length > 0) {
-            tempMessages.push({ 
-                role: "user", 
-                parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-            });
-            tempMessages.push({ 
-                role: "model", 
-                parts: [{ text: "I understand. I will follow these rules without exception." }] 
-            });
-            
-            for (const rule of activeRules) {
-                tempMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                });
-                tempMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                });
-            }
-            
-            tempMessages.push({ 
-                role: "user", 
-                parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-            });
-            tempMessages.push({ 
-                role: "model", 
-                parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-            });
-        }
-        
-        // Add the actual conversation messages
-        const startIdx = (this._assistantPrompt && !this._usingHistory) ? initMessages.length : 0;
-        const userMessages = this._messages.slice(startIdx);
-        
-        // Combine everything for the API request
-        const apiMessages = [...tempMessages, ...userMessages];
-        console.log(`Sending request with ${apiMessages.length} messages (${tempMessages.length} rule messages, ${userMessages.length} conversation messages)`);
-
         const body = {
-            "contents": apiMessages.map(msg => {
-                if (msg instanceof GeminiMessage) {
-                    return { role: msg.role, parts: msg.parts };
-                } else {
-                    return msg;
-                }
+            "contents": this._messages.map(msg => {
+                let m = { role: msg.role, parts: msg.parts };
+                return m;
             }),
             "safetySettings": this._safe ? [] : [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
@@ -809,19 +304,10 @@ class GeminiService extends Service {
                     base_stream: stream
                 }), aiResponse);
             } catch (e) {
-                console.error(`Error sending request: ${e.message}`);
                 aiResponse.addDelta(e.message);
                 aiResponse.thinking = false;
-                
-                // Save history even if there was an error
-                if (this._usingHistory) {
-                    this.saveHistory();
-                }
-            } finally {
-                this._sendInProgress = false;
             }
         });
-
         this._messages.push(aiResponse);
         this.emit('newMsg', this._messages.length - 1);
 
@@ -832,105 +318,119 @@ class GeminiService extends Service {
         }
     }
 
-    // New method to support image generation.
-    sendImage(prompt) {
-        // Add the user's image prompt.
-        this._messages.push(new GeminiMessage('user', prompt, false));
-        this.emit('newMsg', this._messages.length - 1);
-        const aiResponse = new GeminiMessage('model', 'processing image...', true, false);
+    // ========================
+    // New Voice Chat Methods
+    // ========================
 
-        // Create a temporary message array that includes active rules at the beginning
-        let tempMessages = [];
-        
-        // Start with base init messages if using assistant prompt and not using history
-        if (this._assistantPrompt && !this._usingHistory) {
-            tempMessages = [...initMessages];
-        }
-        
-        // Add active rules to the conversation with stronger enforcement
-        const activeRules = this._rules.filter(rule => rule.enabled);
-        if (activeRules.length > 0) {
-            // Add a system message to emphasize rule importance
-            tempMessages.push({ 
-                role: "user", 
-                parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-            });
-            tempMessages.push({ 
-                role: "model", 
-                parts: [{ text: "I understand. I will follow these rules without exception." }] 
-            });
-            
-            // Add each rule with emphasis
-            for (const rule of activeRules) {
-                tempMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                });
-                tempMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                });
-            }
-            
-            // Final confirmation of rules
-            tempMessages.push({ 
-                role: "user", 
-                parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-            });
-            tempMessages.push({ 
-                role: "model", 
-                parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-            });
-        }
-        
-        // Add the actual conversation messages
-        // If using assistant prompt and not using history, skip the initial messages that are already included
-        const startIdx = (this._assistantPrompt && !this._usingHistory) ? initMessages.length : 0;
-        const userMessages = this._messages.slice(startIdx);
-        
-        // Combine everything for the API request
-        const apiMessages = [...tempMessages, ...userMessages];
-        
-        console.log(`Sending image prompt with ${apiMessages.length} total messages (${tempMessages.length} rule messages, ${userMessages.length} conversation messages)...`);
+    // Record audio from the microphone for 5 seconds and save as WAV.
+    async recordVoice() {
+        const tmpFile = `${GLib.get_tmp_dir()}/voice_input.wav`;
+        // Example GStreamer pipeline: capture audio, convert, encode to WAV and save.
+        let pipeline = Gst.parse_launch(`autoaudiosrc ! audioconvert ! audioresample ! wavenc ! filesink location=${tmpFile}`);
+        pipeline.set_state(Gst.State.PLAYING);
 
+        // Record for 5 seconds (adjust as needed).
+        await new Promise(resolve =>
+            GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 5, () => { resolve(); return GLib.SOURCE_REMOVE; })
+        );
+
+        pipeline.set_state(Gst.State.NULL);
+        return tmpFile;
+    }
+
+    // Play an audio file using GStreamer's playbin.
+    playAudio(filePath) {
+        let player = Gst.ElementFactory.make("playbin", "player");
+        player.set_property("uri", `file://${filePath}`);
+        player.set_state(Gst.State.PLAYING);
+    }
+
+    // Helper to combine array of Uint8Arrays.
+    combineChunks(chunks) {
+        let combined = [];
+        for (let chunk of chunks) {
+            combined = combined.concat(Array.from(chunk));
+        }
+        return new Uint8Array(combined);
+    }
+
+    // Read a binary audio response stream, write to a temp file, then play it.
+    readVoiceResponse(stream, aiResponse) {
+        let chunks = [];
+        const readChunk = () => {
+            stream.read_bytes_async(4096, GLib.PRIORITY_DEFAULT, null, (stream, result) => {
+                try {
+                    const bytes = stream.read_bytes_finish(result);
+                    if (bytes.get_size() > 0) {
+                        chunks.push(bytes.toArray());
+                        readChunk();
+                    } else {
+                        // End of stream: combine chunks and write to a temporary file.
+                        let combined = this.combineChunks(chunks);
+                        let tmpAudioFile = `${GLib.get_tmp_dir()}/response_audio.mp3`;
+                        Utils.writeFile(combined, tmpAudioFile);
+                        this.playAudio(tmpAudioFile);
+                        aiResponse.done = true;
+                    }
+                } catch (e) {
+                    aiResponse.done = true;
+                }
+            });
+        };
+        readChunk();
+    }
+
+    // Send a voice message: record, encode audio, and send to Gemini.
+    async sendVoice() {
+        // Record the user's voice.
+        let audioFilePath = await this.recordVoice();
+        let audioDataRaw = Utils.readFile(audioFilePath);
+        let audioBase64 = GLib.base64_encode(audioDataRaw);
+
+        // Build the request body with audio data.
         const body = {
-            // The API may require just a prompt or additional image-specific parameters.
-            "prompt": prompt,
-            "parameters": {
-                "imageSize": "1024x1024" // Example image size – adjust as needed.
-            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {
+                            "audioData": audioBase64,
+                            "inputMediaType": "audio/wav"
+                        }
+                    ]
+                }
+            ],
             "safetySettings": this._safe ? [] : [
                 { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
                 { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
                 { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
             ],
-            // Include the conversation context with rules
-            "contents": apiMessages.map(msg => {
-                // Convert our message objects to the format expected by the API
-                if (msg instanceof GeminiMessage) {
-                    return { role: msg.role, parts: msg.parts };
-                } else {
-                    return msg; // Already in the right format
-                }
-            }),
+            "generationConfig": {
+                "temperature": this._temperature,
+                // Request an audio response.
+                "responseMimeType": "audio/mpeg"
+            },
         };
 
         const proxyResolver = new Gio.SimpleProxyResolver({
             'default-proxy': userOptions.asyncGet().ai.proxyUrl || null
         });
         const session = new Soup.Session({ 'proxy-resolver': proxyResolver });
-        // Use the image generation endpoint.
         const message = new Soup.Message({
             method: 'POST',
-            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1/models/${this.modelName}:generateImage?key=${this._key}`), GLib.UriFlags.NONE),
+            uri: GLib.Uri.parse(replaceapidom(`https://generativelanguage.googleapis.com/v1/models/${this.modelName}:streamGenerateContent?key=${this._key}`), GLib.UriFlags.NONE),
         });
-        message.request_headers.append('Content-Type', `application/json`);
+        message.request_headers.append('Content-Type', 'application/json');
         message.set_request_body_from_bytes('application/json', new GLib.Bytes(JSON.stringify(body)));
+
+        const aiResponse = new GeminiMessage('model', 'processing voice...', true, false);
+        this._messages.push(aiResponse);
+        this.emit('newMsg', this._messages.length - 1);
 
         session.send_async(message, GLib.DEFAULT_PRIORITY, null, (_, result) => {
             try {
                 const stream = session.send_finish(result);
-                this.readResponse(new Gio.DataInputStream({
+                this.readVoiceResponse(new Gio.DataInputStream({
                     close_base_stream: true,
                     base_stream: stream
                 }), aiResponse);
@@ -939,406 +439,7 @@ class GeminiService extends Service {
                 aiResponse.thinking = false;
             }
         });
-        this._messages.push(aiResponse);
-        this.emit('newMsg', this._messages.length - 1);
-    }
-
-    // Rule management methods
-    get rules() { return this._rules; }
-
-    // Get count of active rules
-    get activeRulesCount() {
-        return this._rules.filter(rule => rule.enabled).length;
-    }
-
-    // Get count of total rules
-    get totalRulesCount() {
-        return this._rules.length;
-    }
-
-    // Toggle rule enabled status
-    toggleRuleEnabled(ruleId) {
-        const ruleIndex = this._rules.findIndex(rule => rule.id === ruleId);
-        if (ruleIndex !== -1) {
-            this._rules[ruleIndex].enabled = !this._rules[ruleIndex].enabled;
-            saveRulesToJson(this._rules);
-            saveRulesToTxt(this._rules);
-            this.emit('rulesChanged');
-            return {
-                id: ruleId,
-                enabled: this._rules[ruleIndex].enabled
-            };
-        }
-        return null;
-    }
-
-    // New method to reload rules from files
-    reloadRules() {
-        try {
-            console.log('Attempting to reload rules from files...');
-            const oldRules = [...this._rules];
-            const newRules = readRulesFromJson();
-            
-            // Check if rules have actually changed
-            const oldRulesJson = JSON.stringify(oldRules);
-            const newRulesJson = JSON.stringify(newRules);
-            
-            if (oldRulesJson !== newRulesJson) {
-                console.log(`Rules have changed, updating conversation (${newRules.length} rules)...`);
-                this._rules = newRules;
-                
-                // If not using history, update the current conversation
-                if (!this._usingHistory && this._assistantPrompt) {
-                    // Create new base messages with updated rules
-                    const baseMessages = [...initMessages];
-                    
-                    // Add custom rules to messages with stronger enforcement
-                    const customRules = this._rules.filter(rule => rule.enabled);
-                    if (customRules.length > 0) {
-                        console.log(`Applying ${customRules.length} active rules to conversation...`);
-                        
-                        // Add a system message to emphasize rule importance
-                        baseMessages.push({ 
-                            role: "user", 
-                            parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-                        });
-                        baseMessages.push({ 
-                            role: "model", 
-                            parts: [{ text: "I understand. I will follow these rules without exception." }] 
-                        });
-                        
-                        // Add each rule with emphasis
-                        for (const rule of customRules) {
-                            baseMessages.push({ 
-                                role: "user", 
-                                parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                            });
-                            baseMessages.push({ 
-                                role: "model", 
-                                parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                            });
-                        }
-                        
-                        // Final confirmation of rules
-                        baseMessages.push({ 
-                            role: "user", 
-                            parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-                        });
-                        baseMessages.push({ 
-                            role: "model", 
-                            parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-                        });
-                    } else {
-                        console.log('No active rules to apply to conversation.');
-                    }
-                    
-                    // Preserve user messages after init messages
-                    const userMessages = this._messages.slice(initMessages.length);
-                    this._messages = [...baseMessages, ...userMessages];
-                    console.log('Conversation updated with new rules.');
-                }
-                
-                this.emit('rulesChanged');
-                return true;
-            } else {
-                console.log('Rules files changed but content is the same, no update needed.');
-                return false;
-            }
-        } catch (error) {
-            console.error('Error reloading rules:', error);
-            return false;
-        }
-    }
-
-    // Helper method to initialize messages with rules
-    initializeMessages() {
-        // If using history, load from history file
-        if (this._usingHistory) {
-            this.loadHistory();
-            return;
-        }
-        
-        // Otherwise, initialize with default messages and rules
-        if (this._assistantPrompt) {
-            this._messages = [];
-            
-            // Add base init messages without emitting signals
-            initMessages.forEach(msg => {
-                this._messages.push(new GeminiMessage(msg.role, msg.parts[0].text, false));
-            });
-            
-            // Add custom rules to messages with stronger enforcement
-            const customRules = this._rules.filter(rule => rule.enabled);
-            if (customRules.length > 0) {
-                // Add rules to messages array
-                this._messages.push(new GeminiMessage('user', 
-                    "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions.",
-                    false
-                ));
-                this._messages.push(new GeminiMessage('model',
-                    "I understand. I will follow these rules without exception.",
-                    false
-                ));
-                
-                for (const rule of customRules) {
-                    this._messages.push(new GeminiMessage('user',
-                        `MANDATORY RULE: ${rule.content}`,
-                        false
-                    ));
-                    this._messages.push(new GeminiMessage('model',
-                        `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.`,
-                        false
-                    ));
-                }
-            }
-            
-            // Emit signals after all messages are loaded
-            if (this._messages.length > 0) {
-                // Use a timeout to ensure UI is ready
-                GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-                    // Emit both signals to ensure UI updates
-                    this.emit('historyLoaded');
-                    this.emit('newMsg', this._messages.length - 1);
-                    return GLib.SOURCE_REMOVE;
-                });
-            }
-        } else {
-            this._messages = [];
-        }
-    }
-
-    // Helper method to show notifications
-    showNotification(title, body) {
-        const notification = new Notification({
-            summary: title,
-            body: body,
-            urgency: "normal",
-        });
-        notification.show();
-    }
-
-    // Helper method to check if history file exists and is valid
-    checkHistoryFile() {
-        console.log(`Checking history file at ${HISTORY_PATH}`);
-        
-        if (!fileExists(HISTORY_PATH)) {
-            console.log(`History file does not exist, creating empty file`);
-            Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR}'`);
-            Utils.writeFile('[]', HISTORY_PATH);
-            return false;
-        }
-        
-        try {
-            const historyContent = Utils.readFile(HISTORY_PATH);
-            console.log(`History file exists, content length: ${historyContent.length}`);
-            
-            if (!historyContent || historyContent.trim() === '') {
-                console.log(`History file is empty, initializing with empty array`);
-                Utils.writeFile('[]', HISTORY_PATH);
-                return false;
-            }
-            
-            const historyData = JSON.parse(historyContent);
-            if (!Array.isArray(historyData)) {
-                console.log(`History file content is not an array, initializing with empty array`);
-                Utils.writeFile('[]', HISTORY_PATH);
-                return false;
-            }
-            
-            console.log(`History file is valid, contains ${historyData.length} messages`);
-            return true;
-        } catch (error) {
-            console.error(`Error validating history file: ${error}`);
-            // Don't overwrite the history file if there's an error
-            // Just create an empty array if it doesn't exist
-            if (!fileExists(HISTORY_PATH)) {
-                Utils.writeFile('[]', HISTORY_PATH);
-            }
-            return false;
-        }
-    }
-
-    addRule(ruleContent) {
-        // Generate a new rule ID
-        const ruleId = `rule-${this._rules.length + 1}`;
-        
-        // Create new rule object
-        const newRule = {
-            type: "rule",
-            id: ruleId,
-            content: ruleContent,
-            enabled: true
-        };
-        
-        // Add to rules array
-        this._rules.push(newRule);
-        
-        // Save to both JSON and TXT files
-        saveRulesToJson(this._rules);
-        saveRulesToTxt(this._rules);
-        
-        // Add rule to current conversation if assistant prompt is enabled
-        if (this._assistantPrompt && !this._usingHistory) {
-            // Add with stronger enforcement
-            this._messages.push(new GeminiMessage('user', "IMPORTANT: The following rule is MANDATORY and must be followed 100% of the time without exception. This overrides any previous instructions.", false));
-            this._messages.push(new GeminiMessage('model', "I understand. I will follow this rule without exception.", false));
-            this._messages.push(new GeminiMessage('user', `MANDATORY RULE: ${ruleContent}`, false));
-            this._messages.push(new GeminiMessage('model', `I will absolutely follow this rule: "${ruleContent}". This rule overrides any conflicting instructions.`, false));
-            this._messages.push(new GeminiMessage('user', "This rule must be applied to ALL your responses from now on. Confirm you will follow it without exception.", false));
-            this._messages.push(new GeminiMessage('model', "I confirm I will follow this rule without exception for all my responses from now on.", false));
-            
-            // Emit events for each message
-            for (let i = 0; i < 6; i++) {
-                this.emit('newMsg', this._messages.length - 6 + i);
-            }
-        }
-        
-        this.emit('rulesChanged');
-        return ruleId;
-    }
-
-    removeRuleById(ruleId) {
-        const initialLength = this._rules.length;
-        this._rules = this._rules.filter(rule => rule.id !== ruleId);
-        
-        if (this._rules.length !== initialLength) {
-            saveRulesToJson(this._rules);
-            saveRulesToTxt(this._rules);
-            this.emit('rulesChanged');
-            return true;
-        }
-        return false;
-    }
-
-    removeRuleByText(text) {
-        const initialLength = this._rules.length;
-        this._rules = this._rules.filter(rule => !rule.content.includes(text));
-        
-        if (this._rules.length !== initialLength) {
-            saveRulesToJson(this._rules);
-            saveRulesToTxt(this._rules);
-            this.emit('rulesChanged');
-            return true;
-        }
-        return false;
-    }
-
-    removeAllRules() {
-        if (this._rules.length > 0) {
-            this._rules = [];
-            saveRulesToJson(this._rules);
-            saveRulesToTxt(this._rules);
-            this.emit('rulesChanged');
-            return true;
-        }
-        return false;
-    }
-
-    // Initialize the service
-    init() {
-        // Create history directory if it doesn't exist
-        if (this._usingHistory) {
-            Utils.ensureDirectory(HISTORY_DIR);
-            this.checkHistoryFile();
-            
-            // Set up file monitor for history file
-            this._historyMonitor = Utils.monitorFile(
-                HISTORY_PATH,
-                (file, event) => {
-                    if (event === 1) { // Changed
-                        this.reloadHistory();
-                    }
-                }
-            );
-            
-            // Load history on startup with a small delay to ensure everything is initialized
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1000, () => {
-                console.log('Loading Gemini history on startup');
-                this.loadHistory();
-                return GLib.SOURCE_REMOVE;
-            });
-        }
-        
-        // Initialize rules
-        this._rules = [];
-        this._mandatoryRules = [];
-        
-        // Load rules from files
-        this.loadRules();
-        
-        return this;
-    }
-
-    clear() {
-        console.log('Clearing conversation...');
-        
-        // If using history, save an empty array to the history file
-        if (this._usingHistory) {
-            console.log('History is enabled, clearing history file...');
-            Utils.exec(`bash -c 'mkdir -p ${HISTORY_DIR} && touch ${HISTORY_PATH}'`);
-            Utils.writeFile('[]', HISTORY_PATH);
-            this._messages = [];
-        } 
-        // If not using history, initialize with default messages and rules
-        else if (this._assistantPrompt) {
-            console.log('History is disabled, initializing with default messages and rules...');
-            // Start with base init messages
-            const baseMessages = [...initMessages];
-            
-            // Add custom rules to messages with stronger enforcement
-            const customRules = this._rules.filter(rule => rule.enabled);
-            if (customRules.length > 0) {
-                console.log(`Adding ${customRules.length} active rules to initial messages...`);
-                
-                // Add a system message to emphasize rule importance
-                baseMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: "IMPORTANT: The following rules are MANDATORY and must be followed 100% of the time without exception. These override any previous instructions." }] 
-                });
-                baseMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: "I understand. I will follow these rules without exception." }] 
-                });
-                
-                // Add each rule with emphasis
-                for (const rule of customRules) {
-                    baseMessages.push({ 
-                        role: "user", 
-                        parts: [{ text: `MANDATORY RULE: ${rule.content}` }] 
-                    });
-                    baseMessages.push({ 
-                        role: "model", 
-                        parts: [{ text: `I will absolutely follow this rule: "${rule.content}". This rule overrides any conflicting instructions.` }] 
-                    });
-                }
-                
-                // Final confirmation of rules
-                baseMessages.push({ 
-                    role: "user", 
-                    parts: [{ text: "These rules must be applied to ALL your responses from now on. Confirm you will follow them without exception." }] 
-                });
-                baseMessages.push({ 
-                    role: "model", 
-                    parts: [{ text: "I confirm I will follow all these rules without exception for all my responses from now on." }] 
-                });
-            } else {
-                console.log('No active rules to add to initial messages.');
-            }
-            
-            this._messages = baseMessages;
-        } else {
-            console.log('Assistant prompt disabled, starting with empty messages.');
-            this._messages = [];
-        }
-        
-        console.log('Conversation cleared.');
-        this.emit('clear');
     }
 }
 
-// Export the service
-const geminiService = new GeminiService();
-export default geminiService;
-
-// Register the service in the global scope for file monitors
-globalThis['geminiService'] = geminiService;
+export default new GeminiService();

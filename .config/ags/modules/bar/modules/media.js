@@ -69,6 +69,6 @@ export default () => Widget.EventBox({
             player.playPause();
         }
     },
-    onSecondaryClick: () =>  App.toggleWindow('music'),
+    onSecondaryClick: () => App.toggleWindow('music'),
     child: MediaIndicator(),
 });

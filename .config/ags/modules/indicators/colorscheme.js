@@ -182,20 +182,23 @@ const ColorSchemeSettings = () => Widget.Box({
                         }
                     },
                 }),
-                ConfigToggle({
-                    icon: 'border_clear',
-                    name: getString('Glass Transparency'),
-                    desc: getString('intense transparent mode'),
-                    initValue: initTransparencyModeVal,
-                    onChange: async (self, newValue) => {
-                        try {
-                            const transparencyMode = newValue == 0 ? "normal" : "intense";
-                            await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "7s/.*/${transparencyMode}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
-                        } catch (error) {
-                            console.error('Error changing transparency:', error);
-                        }
-                    },
+                Widget.Box({
+                    css: `margin-left:1rem`,
+                    child: ConfigToggle({
+                        icon: 'contrast',
+                        name: getString('Glass Transparency'),
+                        desc: getString('intense transparent mode'),
+                        initValue: initTransparencyModeVal,
+                        onChange: async (self, newValue) => {
+                            try {
+                                const transparencyMode = newValue == 0 ? "normal" : "intense";
+                                await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "7s/.*/${transparencyMode}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
+                                await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                            } catch (error) {
+                                console.error('Error changing transparency:', error);
+                            }
+                        },
+                    })
                 }),
                 ConfigToggle({
                     icon: 'ripples',

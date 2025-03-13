@@ -1,36 +1,14 @@
+const { GLib } = imports.gi;
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
-import GLib from 'gi://GLib';
 const { Box, Button, Icon, Label, Scrollable, Stack } = Widget;
 const { execAsync, exec } = Utils;
 import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
 import { setupCursorHover } from '../../.widgetutils/cursorhover.js';
 
-// Helper function to safely update a label
-function safeUpdateLabel(label, value, defaultValue = '') {
-    if (!label) return;
-    
-    try {
-        // Try different methods to update the label
-        if (typeof label.set_label === 'function') {
-            label.set_label(value || defaultValue);
-        } else if (typeof label.setLabel === 'function') {
-            label.setLabel(value || defaultValue);
-        } else if (label.label !== undefined) {
-            label.label = value || defaultValue;
-        }
-    } catch (e) {
-        console.error('Error updating label:', e);
-    }
-}
-
 let prevProcessTimes = new Map();
 let prevSystemTime = 0;
 const HERTZ = parseInt(exec('getconf CLK_TCK')) || 100;
-
-// Cache for process item widgets to prevent recreation and GC issues
-const processItemCache = new Map();
-let processListBox = null;
 
 const getSystemCPUTime = () => {
     try {
@@ -74,46 +52,24 @@ const calculateCPUPercentage = (pid, currentProcTime, currentSystemTime) => {
 };
 
 const ProcessItem = ({ name, pid, cpu, memory }) => {
-    // Check if we already have a widget for this PID
-    if (processItemCache.has(pid)) {
-        const existingItem = processItemCache.get(pid);
-        
-        // Update the existing widget's labels
-        try {
-            const nameLabel = existingItem._nameLabel;
-            const statsLabel = existingItem._statsLabel;
-            
-            if (nameLabel) safeUpdateLabel(nameLabel, `${name}`);
-            if (statsLabel) safeUpdateLabel(statsLabel, `PID: ${pid} | CPU: ${cpu}% | MEM: ${memory}MB`);
-            
-            return existingItem;
-        } catch (e) {
-            console.error(`Error updating cached process item for PID ${pid}:`, e);
-            // If updating fails, remove from cache and create a new one
-            processItemCache.delete(pid);
-        }
-    }
-    
-    // Create a new process item widget
-    const nameLabel = Label({
-        xalign: 0,
-        className: 'txt-small txt',
-        label: `${name}`,
-    });
-    
-    const statsLabel = Label({
-        xalign: 0,
-        className: 'txt-smaller txt-subtext',
-        label: `PID: ${pid} | CPU: ${cpu}% | MEM: ${memory}MB`,
-    });
-    
-    const processItem = Box({
+    return Box({
         className: 'task-manager-item spacing-h-10',
         children: [
             MaterialIcon('memory', 'norm'),
             Box({
                 vertical: true,
-                children: [nameLabel, statsLabel],
+                children: [
+                    Label({
+                        xalign: 0,
+                        className: 'txt-small txt',
+                        label: `${name}`,
+                    }),
+                    Label({
+                        xalign: 0,
+                        className: 'txt-smaller txt-subtext',
+                        label: `PID: ${pid} | CPU: ${cpu}% | MEM: ${memory}MB`,
+                    }),
+                ],
             }),
             Box({ hexpand: true }),
             Button({
@@ -127,24 +83,9 @@ const ProcessItem = ({ name, pid, cpu, memory }) => {
             }),
         ],
     });
-    
-    // Store references to the labels for future updates
-    processItem._nameLabel = nameLabel;
-    processItem._statsLabel = statsLabel;
-    
-    // Setup destruction handler
-    processItem.connect('destroy', () => {
-        console.log(`Process item for PID ${pid} destroyed, removing from cache`);
-        processItemCache.delete(pid);
-        processItem._nameLabel = null;
-        processItem._statsLabel = null;
-    });
-    
-    // Store in cache
-    processItemCache.set(pid, processItem);
-    
-    return processItem;
 };
+
+let processListBox = null;
 
 const getProcessList = async () => {
     try {
@@ -201,90 +142,17 @@ const getProcessList = async () => {
 };
 
 const updateProcessList = async () => {
-    // First check if the process list box is still valid
-    if (!processListBox || !processListBox.get_parent()) {
-        console.log('Process list box no longer in DOM, skipping update');
-        return;
-    }
-    
     const processes = await getProcessList();
-    const currentPids = new Set(processes.map(proc => proc.pid));
-    
-    // Find and remove cached items that are no longer in the process list
-    for (const [pid, widget] of processItemCache.entries()) {
-        if (!currentPids.has(pid)) {
-            console.log(`Process ${pid} no longer exists, removing from cache`);
-            try {
-                if (widget && widget.destroy && typeof widget.destroy === 'function') {
-                    widget.destroy();
-                }
-            } catch (e) {
-                console.error(`Error destroying widget for PID ${pid}:`, e);
-            }
-            processItemCache.delete(pid);
-        }
-    }
-    
-    // Create or update process items and add them to the box
-    const processItems = processes.map(proc => ProcessItem({
+    processListBox.children = processes.map(proc => ProcessItem({
         ...proc,
         cpu: proc.cpu.toFixed(1)
     }));
-    
-    // Safely update the children of the process list box
-    try {
-        // Check again if the widget is still valid before updating
-        if (!processListBox || !processListBox.get_parent()) {
-            console.log('Process list box no longer in DOM during update');
-            return;
-        }
-        
-        // First remove all existing children to prevent GC issues
-        try {
-            const existingChildren = [...(processListBox.children || [])];
-            for (const child of existingChildren) {
-                if (child && child.destroy && typeof child.destroy === 'function') {
-                    child.destroy();
-                }
-            }
-            processListBox.children = [];
-        } catch (e) {
-            console.error('Error cleaning up existing children:', e);
-        }
-        
-        // Add a small delay before adding new children to ensure proper cleanup
-        GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
-            if (!processListBox || !processListBox.get_parent()) {
-                console.log('Process list box no longer in DOM during delayed update');
-                return false;
-            }
-            
-            try {
-                // Double check each process item is still valid
-                const validItems = processItems.filter(item => item && item.get_parent() === null);
-                processListBox.children = validItems;
-            } catch (e) {
-                console.error('Error updating process list children:', e);
-            }
-            return false; // Don't repeat
-        });
-    } catch (e) {
-        console.error('Error clearing process list children:', e);
-    }
 };
 
 export default () => {
-    // Create the process list box
     processListBox = Box({
         vertical: true,
         className: 'task-manager-box spacing-v-5',
-    });
-    
-    // Setup destruction handler for the process list box
-    processListBox.connect('destroy', () => {
-        console.log('Process list box destroyed, clearing cache');
-        // Clear the cache when the box is destroyed
-        processItemCache.clear();
     });
 
     const widget = Box({
@@ -316,73 +184,11 @@ export default () => {
             }),
         ],
     });
-    
-    // Setup destruction handler for the main widget
-    widget.connect('destroy', () => {
-        console.log('Task manager widget destroyed');
-    });
 
-    // Create a variable to store the interval ID
-    let updateInterval = null;
-    
-    // Setup the update interval
-    const setupInterval = () => {
-        // Clear any existing interval
-        if (updateInterval !== null) {
-            GLib.source_remove(updateInterval);
-        }
-        
-        // Set up a new interval
-        updateInterval = Utils.interval(userOptions.asyncGet().sidebar.centerModules.taskManager.pollingRate, () => {
-            // Only update if the widget is still valid
-            if (widget.get_parent()) {
-                updateProcessList();
-                return true; // Continue the interval
-            } else {
-                console.log('Task manager widget no longer in DOM, stopping updates');
-                processItemCache.clear();
-                return false; // Stop the interval
-            }
-        });
-    };
-    
-    // Setup the interval
-
-    
-    // Connect a destroy signal to clean up the interval and cache
-    widget.connect('destroy', () => {
-        console.log('Task manager widget destroyed, cleaning up');
-        
-        // Clean up the update interval
-        if (updateInterval !== null) {
-            GLib.source_remove(updateInterval);
-            updateInterval = null;
-        }
-        
-        // Clean up process list box if it still exists
-        try {
-            if (processListBox && processListBox.destroy && typeof processListBox.destroy === 'function') {
-                processListBox.destroy();
-            }
-        } catch (e) {
-            console.error('Error destroying process list box:', e);
-        }
-        
-        // Clean up cached items
-        try {
-            for (const [pid, widget] of processItemCache.entries()) {
-                try {
-                    if (widget && widget.destroy && typeof widget.destroy === 'function') {
-                        widget.destroy();
-                    }
-                } catch (e) {
-                    console.error(`Error destroying widget for PID ${pid}:`, e);
-                }
-            }
-            processItemCache.clear();
-        } catch (e) {
-            console.error('Error cleaning up process item cache:', e);
-        }
+    // Update process list every 3 seconds
+    Utils.interval(userOptions.asyncGet().sidebar.centerModules.taskManager.pollingRate, () => {
+        updateProcessList();
+        return true;
     });
 
     // Initial update

@@ -2,10 +2,10 @@
     @include fluent_accel;
     min-width: 24.636rem;
     min-height: 3.409rem;
-    margin-bottom:4rem;
+    margin-bottom: 4rem;
     border-radius: 0 0 $rounding_mediumlarge $rounding_mediumlarge;
     padding-right: 3.5rem;
-    border-bottom:0.3px solid $outliner;
+    border-bottom: 0.3px solid $outliner;
     background-color: $background;
     color: $onBackground;
 
@@ -21,7 +21,7 @@
     @include anim-enter;
     min-width: 24.636rem;
     min-height: 3.409rem;
-    margin-bottom:4rem;
+    margin-bottom: 4rem;
     border-radius: $rounding_mediumlarge;
     padding: 0.2rem 3.5rem 0.2rem 0;
     border: 0.3px solid $outliner;
@@ -35,11 +35,12 @@
 
     caret-color: transparent;
 }
+
 .overview-search-box-extended {
     min-width: 45rem;
     caret-color: $onSecondaryContainer;
-    margin-bottom:0.4rem;
-    padding-left:1.364rem;
+    margin-bottom: 0.4rem;
+    padding-left: 1.364rem;
 }
 
 .overview-search-prompt {
@@ -78,7 +79,7 @@
     font-size: 2.386rem;
     min-width: 2.386rem;
     min-height: 2.386rem;
-    
+
 }
 
 .overview-search-results-txt {
@@ -108,9 +109,11 @@
 .overview-search-result-btn:active {
     background-color: $layer2Hover;
 }
+
 .overview-round {
     border-radius: $rounding_mediumlarge $rounding_mediumlarge 0 0;
 }
+
 .overview-tasks {
     border-top: 0.2px solid $outliner;
     padding: 1rem;

@@ -35,7 +35,7 @@ export const SaadiBar = Widget.CenterBox({
       }),
       Box({
         hexpand: false,
-        hpack:'start',
+        hpack: 'start',
         css: `padding : 0; min-width:20px`,
         className: "group-saadi",
         children: [
@@ -44,7 +44,7 @@ export const SaadiBar = Widget.CenterBox({
       }),
       Box({
         className: "group-saadi",
-        css:`padding-left: 0`,
+        css: `padding-left: 0`,
         children: [
           BatteryScaleModule()
         ]
@@ -52,16 +52,16 @@ export const SaadiBar = Widget.CenterBox({
     ]
   }),
   centerWidget: Widget.Button({
-    child:Widget.Box({
-    className: "group-saadi",
-    children: [
-      NotificationIndicator(),
-      Clock(),
-    ],
-   }),
-   onClicked: () => {
-    App.toggleWindow('sideright')
-  }
+    child: Widget.Box({
+      className: "group-saadi",
+      children: [
+        NotificationIndicator(),
+        Clock(),
+      ],
+    }),
+    onClicked: () => {
+      App.toggleWindow('sideright')
+    }
   }),
   endWidget: Widget.Box({
     children: [
@@ -69,8 +69,8 @@ export const SaadiBar = Widget.CenterBox({
         hexpand: true,
         hpack: 'end',
         children: [
-          scrolledmodule({
-            children:[
+          userOptions.asyncGet().muslim.enabled ? scrolledmodule({
+            children: [
               Widget.Box({
                 hpack: 'end',
                 hexpand: true,
@@ -86,9 +86,16 @@ export const SaadiBar = Widget.CenterBox({
                 children: [
                   WeatherOnly()
                 ],
-              }),    
+              }),
             ]
-          }),
+          }) : Widget.Box({
+            hpack: 'end',
+            hexpand: true,
+            className: "group-saadi",
+            children: [
+              WeatherOnly()
+            ],
+          }), ,
           Widget.Box({
             hpack: 'end',
             hexpand: true,
@@ -105,7 +112,7 @@ export const SaadiBar = Widget.CenterBox({
               NormalOptionalWorkspaces(),
             ]
           }),
-          Widget.Button({onClicked:()=> App.toggleWindow(`sideright`),child:bluetoothPill({className:"prim-txt group-saadi"})}),
+          Widget.Button({ onClicked: () => App.toggleWindow(`sideright`), child: bluetoothPill({ className: "prim-txt group-saadi" }) }),
           Power
         ]
       }),

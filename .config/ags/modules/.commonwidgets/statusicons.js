@@ -64,7 +64,7 @@ export const NotificationIndicator = (notifCenterName = "sideright") => {
 
 export const BluetoothIndicator = () =>
   Widget.Stack({
-    transition: "slide_up_down",
+    transition: "crossfade",
     transitionDuration: userOptions.asyncGet().animations.durationSmall,
     children: {
       false: Widget.Label({
@@ -98,20 +98,20 @@ const BluetoothDevices = () =>
                 Widget.Icon(`${device.iconName}-symbolic`),
                 ...(device.batteryPercentage
                   ? [
-                      Widget.Label({
-                        className: "txt-smallie",
-                        label: `${device.batteryPercentage}`,
-                        setup: (self) => {
-                          self.hook(
-                            device,
-                            (self) => {
-                              self.label = `${device.batteryPercentage}`;
-                            },
-                            "notify::batteryPercentage",
-                          );
-                        },
-                      }),
-                    ]
+                    Widget.Label({
+                      className: "txt-smallie",
+                      label: `${device.batteryPercentage}`,
+                      setup: (self) => {
+                        self.hook(
+                          device,
+                          (self) => {
+                            self.label = `${device.batteryPercentage}`;
+                          },
+                          "notify::batteryPercentage",
+                        );
+                      },
+                    }),
+                  ]
                   : []),
               ],
             });
@@ -124,7 +124,7 @@ const BluetoothDevices = () =>
 
 const NetworkWiredIndicator = () =>
   Widget.Stack({
-    transition: "slide_up_down",
+    transition: "crossfade",
     transitionDuration: userOptions.asyncGet().animations.durationSmall,
     children: {
       fallback: SimpleNetworkIndicator(),
@@ -169,7 +169,7 @@ const SimpleNetworkIndicator = () =>
 
 const NetworkWifiIndicator = () =>
   Widget.Stack({
-    transition: "slide_up_down",
+    transition: "crossfade",
     transitionDuration: userOptions.asyncGet().animations.durationSmall,
     children: {
       disabled: Widget.Label({
@@ -242,23 +242,23 @@ export const NetworkIndicator = (props = {},) =>
       }),
   });
 
-  export const bluetoothPill = (props = {}) =>
-    Widget.Box({
-      ...props,
-      child: Widget.Box({
-        className: "onSurfaceVariant spacing-h-15",
-        children: [
-          Widget.Box({
-            className: "onSurfaceVariant spacing-h-10 ",
-            children: [
-              BluetoothDevices(),
-              BluetoothIndicator(),
-            ],
-          }),
-        ],
-      }),
-    });
-  
+export const bluetoothPill = (props = {}) =>
+  Widget.Box({
+    ...props,
+    child: Widget.Box({
+      className: "onSurfaceVariant spacing-h-15",
+      children: [
+        Widget.Box({
+          className: "onSurfaceVariant spacing-h-10 ",
+          children: [
+            BluetoothDevices(),
+            BluetoothIndicator(),
+          ],
+        }),
+      ],
+    }),
+  });
+
 export const StatusIcons = (props = {}, monitor = 0) =>
   Widget.Box({
     ...props,

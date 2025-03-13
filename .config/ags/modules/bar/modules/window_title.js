@@ -5,7 +5,7 @@ import Indicator from "../../../services/indicator.js";
 import GLib from "gi://GLib";
 
 const BRIGHTNESS_STEP = 0.05;
-const DEFAULT_WORKSPACE_LABEL = "HyprLuna";
+const DEFAULT_WORKSPACE_LABEL = "HyprNoon";
 
 const createClassWindow = async () => {
   try {

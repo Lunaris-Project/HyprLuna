@@ -35,21 +35,21 @@ function forMonitors(widget) {
 }
 
 globalThis['handleStyles'] = () => {
-    // Reset Styles
-    Utils.exec(`mkdir -p "${GLib.get_user_state_dir()}/ags/scss"`);
-    let lightdark = darkMode.value ? "dark" : "light";
-    Utils.writeFileSync(
-        `@mixin symbolic-icon { -gtk-icon-theme: '${userOptions.asyncGet().icons.symbolicIconTheme[lightdark]}'}`,
-        `${GLib.get_user_state_dir()}/ags/scss/_lib_mixins_overrides.scss`)
-    // Compile and apply
-    async function applyStyle() {
-        Utils.exec(`mkdir -p ${COMPILED_STYLE_DIR}`);
-        Utils.exec(`sass -I "${GLib.get_user_state_dir()}/ags/scss" -I "${App.configDir}/scss/fallback" "${App.configDir}/scss/main.scss" "${COMPILED_STYLE_DIR}/style.css"`);
-        App.resetCss();
-        App.applyCss(`${COMPILED_STYLE_DIR}/style.css`);
-        console.log('Styles loaded')
-    }
-    applyStyle().catch(print);
+  // Reset Styles
+  Utils.exec(`mkdir -p "${GLib.get_user_state_dir()}/ags/scss"`);
+  let lightdark = darkMode.value ? "dark" : "light";
+  Utils.writeFileSync(
+    `@mixin symbolic-icon { -gtk-icon-theme: '${opts.icons.symbolicIconTheme[lightdark]}'}`,
+    `${GLib.get_user_state_dir()}/ags/scss/_lib_mixins_overrides.scss`)
+  // Compile and apply
+  async function applyStyle() {
+    Utils.exec(`mkdir -p ${COMPILED_STYLE_DIR}`);
+    Utils.exec(`sass -I "${GLib.get_user_state_dir()}/ags/scss" -I "${App.configDir}/scss/fallback" "${App.configDir}/scss/main.scss" "${COMPILED_STYLE_DIR}/style.css"`);
+    App.resetCss();
+    App.applyCss(`${COMPILED_STYLE_DIR}/style.css`);
+    console.log('Styles loaded')
+  }
+  applyStyle().catch(print);
 }
 
 
@@ -71,40 +71,40 @@ for (let i = 0; i < monitors; i++) {
     .catch();
 }
 let Modules = () => [
-  ...(userOptions.asyncGet().indicators.enabled !== false
+  ...(opts.indicators.enabled !== false
     ? [forMonitors(Indicator)]
     : []),
-  ...(userOptions.asyncGet().session.enabled !== false
+  ...(opts.session.enabled !== false
     ? [forMonitors(Session)]
     : []),
-  ...(userOptions.asyncGet().overview.enabled !== false ? [Overview()] : []),
-  ...(userOptions.asyncGet().cheatsheet.enabled !== false
+  ...(opts.overview.enabled !== false ? [Overview()] : []),
+  ...(opts.cheatsheet.enabled !== false
     ? [forMonitors(Cheatsheet)]
     : []),
-  ...(userOptions.asyncGet().desktopBackground.enabled !== false
+  ...(opts.desktopBackground.enabled !== false
     ? [forMonitors(DesktopBackground)]
     : []),
-  ...(userOptions.asyncGet().wallselect.enabled !== false
+  ...(opts.wallselect.enabled !== false
     ? [Wallselect()]
     : []),
-  ...(userOptions.asyncGet().dock.enabled ? [forMonitors(Dock)] : []),
-  ...(userOptions.asyncGet().appearance.fakeScreenRounding !== 0
+  ...(opts.dock.enabled ? [forMonitors(Dock)] : []),
+  ...(opts.appearance.fakeScreenRounding !== 0
     ? [
-      forMonitors((id) => Corner(id, "top left", true, opts.etc.screencorners.topleft )),
-      forMonitors((id) => Corner(id, "top right", true, opts.etc.screencorners.topright )),
+      forMonitors((id) => Corner(id, "top left", true, opts.etc.screencorners.topleft)),
+      forMonitors((id) => Corner(id, "top right", true, opts.etc.screencorners.topright)),
       forMonitors((id) => Corner(id, "bottom left", true, opts.etc.screencorners.bottomleft)),
       forMonitors((id) => Corner(id, "bottom right", true, opts.etc.screencorners.bottomright)),
-        ]
+    ]
     : []),
-    SideLeft(),
-    Recorder(),
-    MusicWindow(),
-    SideRight(),
-    Glance(),
-  ];
+  SideLeft(),
+  Recorder(),
+  MusicWindow(),
+  SideRight(),
+  Glance(),
+];
 
-  App.config({
-    css: `${COMPILED_STYLE_DIR}/style.css`,
-    stackTraceOnError: true,
-    windows: Modules().flat(1),
-  });
+App.config({
+  css: `${COMPILED_STYLE_DIR}/style.css`,
+  stackTraceOnError: true,
+  windows: Modules().flat(1),
+});

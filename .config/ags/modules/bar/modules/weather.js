@@ -12,13 +12,12 @@ const userName = GLib.get_real_name() + " ~ " + GLib.get_user_name();
 
 const WeatherWidget = () => {
     const CYCLE_INTERVAL = 10000;
-    const PRIORITY_DISPLAY_TIME = 1000;
+    const PRIORITY_DISPLAY_TIME = 3000; // Duration to display the notification mode
 
     let displayMode = 'weather';
-    let previousMode = 'weather';
-    let notificationTimeout = null;
-    let cycleTimeout = null;
+    let previousMode = displayMode;
     let lastTitle = null;
+    let cycleTimeout = null;
 
     // Media components
     const mediaIcon = MaterialIcon('music_note', 'large txt-norm txt-onLayer1');
@@ -26,58 +25,51 @@ const WeatherWidget = () => {
         className: 'txt-norm txt-onLayer1',
     });
 
-    // Notification components
+    // Notification components (stacked vertically)
     const notificationIcon = MaterialIcon('notifications', 'large txt-norm txt-onLayer1');
-    const notificationLabel = Widget.Label({
+    const notificationTitleLabel = Widget.Label({
         className: 'txt-norm txt-onLayer1',
     });
-
-    // Reusable content components
-    const mediaContent = Box({
-        className: 'content-box spacing-h-4',
-        hpack: 'center',
-        // hexpand: true,
-        children: [
-            mediaIcon,
-            mediaTitleLabel
-        ]
+    const notificationBodyLabel = Widget.Label({
+        className: 'txt-small txt-onLayer1',
     });
-
+    // Use CSS class "spacing-v-4" (for example) to vertically space elements
     const notificationContent = Box({
-        className: 'content-box spacing-h-4',
-        hpack: 'center',
-        // hexpand: true,
+        className: 'content-box spacing-v-4', // CSS should handle vertical layout here
         children: [
             notificationIcon,
-            notificationLabel
+            notificationTitleLabel,
+            notificationBodyLabel
         ]
     });
 
     const usernameContent = Box({
         className: 'content-box',
         hpack: 'center',
-        // hexpand: true,
-        child: Widget.Label({
-            className: 'txt-norm txt-onLayer1',
-            label: userName
-        })
+        child: Widget.Label({ className: 'txt-norm txt-onLayer1', label: userName })
     });
 
     const clockContent = Box({
         className: 'content-box',
-        hpack:"center",
+        hpack: "center",
         child: Clock()
     });
 
-    // Main content stack
+    // Main content stack with various modes
     const contentStack = Stack({
         transition: 'slide_up_down',
         transitionDuration: userOptions.asyncGet().animations.durationSmall,
         css: `padding: 0 20px`,
+        hpack: 'center',
+        hexpand: true,
         children: {
             'weather': WeatherOnly(),
             'prayer': PrayerTimesWidget(),
-            'media': mediaContent,
+            'media': Box({
+                className: 'content-box spacing-h-4',
+                hpack: 'center',
+                children: [mediaIcon, mediaTitleLabel]
+            }),
             'notification': notificationContent,
             'clock': clockContent,
             'username': usernameContent,
@@ -85,44 +77,10 @@ const WeatherWidget = () => {
         shown: displayMode
     });
 
-    // Priority display management
-    const showPriorityContent = (mode, duration) => {
-        if (notificationTimeout) GLib.source_remove(notificationTimeout);
-
-        previousMode = displayMode;
-        displayMode = mode;
-        contentStack.shown = mode;
-
-        notificationTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, duration, () => {
-            displayMode = previousMode;
-            contentStack.shown = previousMode;
-            notificationTimeout = null;
-            return GLib.SOURCE_REMOVE;
-        });
-    };
-
-    // Media tracking
-    const updateMediaInfo = () => {
-        const title = Media.title || 'Silent Mode';
-
-        if (title !== lastTitle) {
-            mediaTitleLabel.label = title;
-            showPriorityContent('media', PRIORITY_DISPLAY_TIME);
-        }
-
-        lastTitle = title;
-    };
-
-    // Notification handling
-    const showNotification = (notification) => {
-        notificationLabel.label = notification.summary;
-        showPriorityContent('notification', PRIORITY_DISPLAY_TIME);
-    };
-
-    // Cycling logic
     const cycleModes = () => {
         const modes = ['weather', 'prayer', 'media', 'clock', 'username'];
         const currentIndex = modes.indexOf(displayMode);
+        previousMode = displayMode;
         displayMode = modes[(currentIndex + 1) % modes.length];
         contentStack.shown = displayMode;
     };
@@ -130,7 +88,7 @@ const WeatherWidget = () => {
     const startAutoCycle = () => {
         if (cycleTimeout) GLib.source_remove(cycleTimeout);
         cycleTimeout = GLib.timeout_add(GLib.PRIORITY_DEFAULT, CYCLE_INTERVAL, () => {
-            if (!notificationTimeout) cycleModes();
+            cycleModes();
             return GLib.SOURCE_CONTINUE;
         });
     };
@@ -142,18 +100,43 @@ const WeatherWidget = () => {
         },
         child: Box({
             className: 'complex-status',
-            hpack: 'center',
             hexpand: true,
+            hpack: 'center',
             child: contentStack,
             setup: self => {
-                // Initialize services
-                self
-                    .hook(Media, updateMediaInfo, 'changed')
-                    .hook(Notifications, (box, id) => {
-                        const notifications = Notifications.notifications;
-                        if (notifications.length > 0) showNotification(notifications[0]);
-                    }, 'notified');
-                // Start initial cycle
+                // Hook into Media changes
+                self.hook(Media, () => {
+                    const title = Media.title || 'Silent Mode';
+                    if (title !== lastTitle) {
+                        mediaTitleLabel.label = title;
+                    }
+                    lastTitle = title;
+                }, 'changed');
+
+                // Hook into Notifications
+                self.hook(Notifications, (box, id) => {
+                    const notifications = Notifications.notifications;
+                    if (notifications.length > 0) {
+                        // Set the notification title and body separately.
+                        notificationTitleLabel.label = notifications[0].summary || "Unknown Notification";
+                        // notificationBodyLabel.label = notifications[0].body || "";
+                        previousMode = displayMode;
+                        displayMode = 'notification';
+                        contentStack.shown = 'notification';
+                        self.toggleClassName('notification-active', true);
+                        GLib.timeout_add(GLib.PRIORITY_DEFAULT, PRIORITY_DISPLAY_TIME, () => {
+                            displayMode = previousMode;
+                            contentStack.shown = previousMode;
+                            self.toggleClassName('notification-active', false);
+                            GLib.timeout_add(GLib.PRIORITY_DEFAULT, PRIORITY_DISPLAY_TIME, () => {
+                                self.toggleClassName('notification-deactivate', true);
+                                return GLib.SOURCE_REMOVE;
+                            });
+                            return GLib.SOURCE_REMOVE;
+                        });
+                    }
+                }, 'notified');
+
                 startAutoCycle();
             }
         })

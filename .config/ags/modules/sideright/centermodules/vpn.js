@@ -36,7 +36,7 @@ const updateVpnServers = async () => {
                 Message,
                 OpenVPN_ConfigData_Base64
             ] = line.split(',');
-            
+
             return {
                 hostName: HostName,
                 country: CountryLong,
@@ -52,7 +52,7 @@ const updateVpnServers = async () => {
 
 const VpnServer = (server) => {
     const isConnected = currentServer?.hostName === server.hostName && currentStatus === VPN_STATUS.CONNECTED;
-    
+
     return Button({
         onClicked: () => {
             if (isConnected) {

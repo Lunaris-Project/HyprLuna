@@ -16,7 +16,7 @@ mapfile -t lines < "$COLORMODE_FILE"
 # Transparency setup
 if [[ "${lines[1]}" == *"transparent"* ]]; then
     ags_transparency=True
-    hypr_opacity=0.8
+    hypr_opacity=0.9
     rofi_alpha="#00000090"
     rofi_alpha_element="#00000025"
     term_alpha=0.8

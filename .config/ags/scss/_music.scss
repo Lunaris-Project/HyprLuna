@@ -14,29 +14,52 @@ $secondaryContainer: transparentize(mix(mix($background, $color2, 50%), $color6,
 .osd-music {
     @include menu_decel;
     @include shadows1;
-    background-color: $background;
+    background-color: $layer0;
     border: 0.2px solid $outliner;
-    border-radius: 0 0 0 0;
+    border-radius: $rounding_mediumlarge $rounding_mediumlarge 0 0;
     padding: 0.46rem 1.423rem;
 
 }
-.normal-music {
-    background-color: $layer0; // coherent theme
-}
 .amberoled {
     background: 
-// Central glow effect
-radial-gradient(
-    ellipse at 50% 50%,
-    transparentize($music_gradient3, $music_colorstart_transparentize - 0.25) 0%,
-    transparentize($music_gradient3, $music_colorstart_transparentize - $music_transparentize_amount) 70%
-),
+    linear-gradient(127deg, 
+        transparentize($music_gradient1, $music_colorstart_transparentize - 0.15),
+        transparentize($music_gradient1, $music_colorstart_transparentize - $music_transparentize_amount) 80%
+    ),
+    linear-gradient(217deg, 
+        transparentize($music_gradient2, $music_colorstart_transparentize - 0.1),
+        transparentize($music_gradient2, $music_colorstart_transparentize - $music_transparentize_amount + 0.1) 70.71%
+    ),
+    // Central glow effect
+    radial-gradient(
+        ellipse at 50% 50%,
+        transparentize($music_gradient3, $music_colorstart_transparentize - 0.25) 0%,
+        transparentize($music_gradient3, $music_colorstart_transparentize - $music_transparentize_amount) 70%
+    ),
+    // Dynamic corner accent
+    radial-gradient(
+        circle at 85% 15%,
+        transparentize($color4, $music_colorstart_transparentize - 0.3) 0%,
+        transparentize($color4, $music_colorstart_transparentize - $music_transparentize_amount + 0.2) 100%
+    ),
+    // Subtle texture overlay
+    repeating-linear-gradient(
+        45deg,
+        transparentize($background, 0.95),
+        transparentize($background, 0.95) 10px,
+        transparentize(mix($music_gradient1, $music_gradient2, 50%), 0.9) 10px,
+        transparentize(mix($music_gradient1, $music_gradient2, 50%), 0.9) 20px
+    ),
     // Solid base layer
     linear-gradient($background, $background);
 
 }
+.osd-toprounding {
+    border-radius: $rounding_large $rounding_large 0 0 ;
+
+}
 .corner-amberoled {
-    background-color: $background;
+    background-color: $music_gradient3;
 }
 
 .osd-music-cover {
@@ -46,7 +69,7 @@ radial-gradient(
     min-height: 230px;
 }
 .elevate-music{
-    border-radius: $rounding_large;
+    border-radius: $rounding_large
 }
 .osd-music-cover-art {
     border-radius: 20px;
@@ -144,16 +167,17 @@ radial-gradient(
     margin: -0.1rem 0rem;
 }
 .cava-container {
-    min-height: 140px;
+    min-height: 100px;
     padding: 5px;
     border-radius: 12px;
+    
     .cava-visualizer {
         font-family: techfont;
         font-size: 24px;
         color: $primary;
         border-radius: 12px;
         padding: 10px;
-        background-color: $secondaryContainer;
+        
         .cava-bar {
             background-color: mix($secondary, $background, 70%);
             border-radius: 4px;
@@ -170,12 +194,6 @@ radial-gradient(
             &.cava-bar-high {
                 background-color: mix($primary, $background, 95%);
             }
-        }
-        .cava-bar-up {
-            border-radius: 4px 4px 0 0;
-        }
-        .cava-bar-down {
-            border-radius: 0 0 4px 4px;
         }
     }
 }
