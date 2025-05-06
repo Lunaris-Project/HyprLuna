@@ -8,6 +8,79 @@ import { monitors } from '../.commondata/hyprlanddata.js';
 
 const { exec, execAsync } = Utils;
 
+// Make sure closeWindowOnAllMonitors is defined
+// This function is defined globally in variables.js but we'll check for it here
+if (!globalThis.closeWindowOnAllMonitors) {
+    globalThis.closeWindowOnAllMonitors = (name) => {
+        const range = (length, start = 0) => Array.from({ length }, (_, i) => i + start);
+        const numMonitors = Gdk.Display.get_default()?.get_n_monitors() || 1;
+        range(numMonitors).forEach((id) => {
+            App.closeWindow(`${name}${id}`);
+        });
+    };
+}
+
+// Utility function for system actions
+const systemAction = async (action, fallback = null) => {
+    try {
+        // First try systemctl (systemd)
+        const systemctlCmd = {
+            'lock': null, // No systemctl equivalent, use loginctl
+            'logout': null, // No systemctl equivalent, handle separately
+            'suspend': 'systemctl suspend',
+            'hibernate': 'systemctl hibernate',
+            'reboot': 'systemctl reboot',
+            'shutdown': 'systemctl poweroff'
+        };
+
+        // Fallback to loginctl if systemctl fails
+        const loginctlCmd = {
+            'lock': 'loginctl lock-session',
+            'logout': 'loginctl terminate-user $USER',
+            'suspend': 'loginctl suspend',
+            'hibernate': 'loginctl hibernate',
+            'reboot': 'loginctl reboot',
+            'shutdown': 'loginctl poweroff'
+        };
+
+        // Special case for logout which needs to handle different WMs
+        if (action === 'logout') {
+            await execAsync(['bash', '-c', 'pkill Hyprland || pkill sway || pkill niri || loginctl terminate-user $USER']).catch(print);
+            return;
+        }
+
+        // For lock, just use loginctl directly
+        if (action === 'lock') {
+            await execAsync(['loginctl', 'lock-session']).catch(print);
+            return;
+        }
+
+        // Try systemctl first if available
+        if (systemctlCmd[action]) {
+            try {
+                await execAsync(['bash', '-c', systemctlCmd[action]]);
+                return;
+            } catch (e) {
+                console.log(`systemctl ${action} failed, trying loginctl...`);
+            }
+        }
+
+        // Fall back to loginctl
+        await execAsync(['bash', '-c', loginctlCmd[action]]).catch(print);
+
+    } catch (e) {
+        console.error(`Failed to execute ${action}:`, e);
+        // Try custom fallback if provided
+        if (fallback) {
+            try {
+                await execAsync(['bash', '-c', fallback]).catch(print);
+            } catch (e) {
+                console.error(`Fallback for ${action} also failed:`, e);
+            }
+        }
+    }
+};
+
 const SessionButton = (name, icon, command, props = {}, colorid = 0) => {
     const buttonDescription = Widget.Revealer({
         vpack: 'end',
@@ -61,14 +134,80 @@ const SessionButton = (name, icon, command, props = {}, colorid = 0) => {
 
 export default ({ id = 0 }) => {
     // lock, logout, sleep
-    const lockButton = SessionButton(getString('Lock'), 'lock', () => { closeWindowOnAllMonitors('session'); execAsync(['loginctl', 'lock-session']).catch(print) }, {}, 1);
-    const logoutButton = SessionButton(getString('Logout'), 'logout', () => { closeWindowOnAllMonitors('session'); execAsync(['bash', '-c', 'pkill Hyprland || pkill sway || pkill niri || loginctl terminate-user $USER']).catch(print) }, {}, 2);
-    const sleepButton = SessionButton(getString('Sleep'), 'sleep', () => { closeWindowOnAllMonitors('session'); execAsync(['bash', '-c', 'systemctl suspend || loginctl suspend']).catch(print) }, {}, 3);
+    const lockButton = SessionButton(
+        getString('Lock'),
+        'lock',
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('lock');
+        },
+        {},
+        1
+    );
+
+    const logoutButton = SessionButton(
+        getString('Logout'),
+        'logout',
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('logout');
+        },
+        {},
+        2
+    );
+
+    const sleepButton = SessionButton(
+        getString('Sleep'),
+        'bedtime', // Better icon for sleep/suspend
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('suspend');
+        },
+        {},
+        3
+    );
+
     // hibernate, shutdown, reboot
-    const hibernateButton = SessionButton(getString('Hibernate'), 'downloading', () => { closeWindowOnAllMonitors('session'); execAsync(['bash', '-c', 'systemctl hibernate || loginctl hibernate']).catch(print) }, {}, 4);
-    const shutdownButton = SessionButton(getString('Shutdown'), 'power_settings_new', () => { closeWindowOnAllMonitors('session'); execAsync(['bash', '-c', 'systemctl poweroff || loginctl poweroff']).catch(print) }, {}, 5);
-    const rebootButton = SessionButton(getString('Reboot'), 'restart_alt', () => { closeWindowOnAllMonitors('session'); execAsync(['bash', '-c', 'systemctl reboot || loginctl reboot']).catch(print) }, {}, 6);
-    const cancelButton = SessionButton(getString('Cancel'), 'close', () => closeWindowOnAllMonitors('session'), { className: 'session-button-cancel' }, 7);
+    const hibernateButton = SessionButton(
+        getString('Hibernate'),
+        'mode_standby', // Better icon for hibernate
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('hibernate');
+        },
+        {},
+        4
+    );
+
+    const shutdownButton = SessionButton(
+        getString('Shutdown'),
+        'power_settings_new',
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('shutdown');
+        },
+        {},
+        5
+    );
+
+    const rebootButton = SessionButton(
+        getString('Reboot'),
+        'restart_alt',
+        () => {
+            App.closeWindow(`session${id}`);
+            systemAction('reboot');
+        },
+        {},
+        6
+    );
+
+    const cancelButton = SessionButton(
+        getString('Cancel'),
+        'close',
+        () => App.closeWindow(`session${id}`),
+        { className: 'session-button-cancel' },
+        7
+    );
 
     const sessionDescription = Widget.Box({
         vertical: true,
@@ -90,9 +229,13 @@ export default ({ id = 0 }) => {
         className: 'spacing-h-15',
         children: children,
     });
+    // Arrange buttons in a more logical order
     const sessionButtonRows = [
-        SessionButtonRow([lockButton, logoutButton, sleepButton]),
-        SessionButtonRow([hibernateButton, shutdownButton, rebootButton]),
+        // First row: Lock, Sleep, Hibernate (user state actions)
+        SessionButtonRow([lockButton, sleepButton, hibernateButton]),
+        // Second row: Logout, Reboot, Shutdown (system state actions)
+        SessionButtonRow([logoutButton, rebootButton, shutdownButton]),
+        // Third row: Cancel button
         SessionButtonRow([cancelButton]),
     ]
     return Widget.Box({
@@ -104,9 +247,9 @@ export default ({ id = 0 }) => {
         vertical: true,
         children: [
             Widget.EventBox({
-                onPrimaryClick: () => closeWindowOnAllMonitors('session'),
-                onSecondaryClick: () => closeWindowOnAllMonitors('session'),
-                onMiddleClick: () => closeWindowOnAllMonitors('session'),
+                onPrimaryClick: () => App.closeWindow(`session${id}`),
+                onSecondaryClick: () => App.closeWindow(`session${id}`),
+                onMiddleClick: () => App.closeWindow(`session${id}`),
             }),
             Widget.Box({
                 hpack: 'center',
@@ -126,8 +269,8 @@ export default ({ id = 0 }) => {
             })
         ],
         setup: (self) => self
-            .hook(App, (_b, name, visible) => {
-                if (visible) shutdownButton.grab_focus(); // Lock is the default option
+            .hook(App, (_b, _name, visible) => {
+                if (visible) lockButton.grab_focus(); // Lock is the safest default option
             })
         ,
     });

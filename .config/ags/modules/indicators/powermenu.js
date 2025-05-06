@@ -74,12 +74,12 @@ const PowerMenu = () => Widget.Box({
     className: 'power-menu ',
     children: [
         lockButton,
-        // logoutButton,
+         logoutButton,
         sleepButton,
-        // hibernateButton,
+         hibernateButton,
         shutdownButton,
         rebootButton,
-        // cancelButton,
+         cancelButton,
     ],
 })
 export default () => Widget.Revealer({

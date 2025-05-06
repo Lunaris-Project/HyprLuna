@@ -202,7 +202,7 @@ const WeatherWidget = () => {
       const encodedCity = encodeURIComponent(city.trim());
       const cmd = ['curl', '-s', '-k', '--connect-timeout', '5', `https://wttr.in/${encodedCity}?format=j1`];
       const response = await execAsync(cmd);
-      
+
       if (!response) {
         throw new Error('Empty response from weather API');
       }
@@ -362,31 +362,23 @@ const BarGroup = ({ child }) =>
   });
 
 const BatteryModule = () => {
-  const batteryWidget = Box({
+  // Check if battery is available
+  if (!Battery?.available) {
+    // Return only utilities without battery for non-battery devices
+    return Box({
+      className: "spacing-h-5",
+      children: [BarGroup({ child: Utilities() })],
+    });
+  }
+
+  // For devices with battery, return both utilities and battery
+  return Box({
     className: "spacing-h-5",
     children: [
       BarGroup({ child: Utilities() }),
-      Stack({
-        transitionDuration: userOptions.asyncGet().animations.durationLarge,
-        transition: "slide_up_down",
-        children: {
-          laptop: BarGroup({ child: BarBattery() }),
-          hidden: Widget.Box({}),
-        },
-        setup: (stack) => {
-          // Initialize the stack to show laptop by default
-          stack.shown = "laptop";
-          
-          // Only hide if battery is explicitly not available
-          stack.hook(Battery, () => {
-            stack.shown = Battery.available ? "laptop" : "hidden";
-          });
-        },
-      }),
+      BarGroup({ child: BarBattery() }),
     ],
   });
-  
-  return batteryWidget;
 };
 
 export default () =>
@@ -397,16 +389,16 @@ export default () =>
     child: Widget.Box({
       className: "spacing-h-5",
       children: [
-      
+
           Widget.Box({
             className: "spacing-h-5",
-            children: [      
-              BarGroup({ child: BarClock() }),          
+            children: [
+              BarGroup({ child: BarClock() }),
               BarGroup({ child: WeatherWidget() }),
               BarGroup({ child: BatteryModule() }),
             ],
           }),
-        
+
       ],
     }),
   });

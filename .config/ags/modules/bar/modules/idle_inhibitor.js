@@ -3,8 +3,7 @@ import Utils from 'resource:///com/github/Aylur/ags/utils.js';
 import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
 const { exec, execAsync } = Utils;
 
-// Use absolute path to script
-const SCRIPT_PATH = '/home/pharmaracist/dots-hyprland/.config/ags/scripts/wayland-idle-inhibitor.py';
+const SCRIPT_PATH = '~/.config/ags/scripts/wayland-idle-inhibitor.py';
 
 const configDir = Utils.CACHE_DIR.replace('cache/ags', 'config/ags');
 

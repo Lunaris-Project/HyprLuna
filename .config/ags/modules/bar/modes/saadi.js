@@ -1,4 +1,5 @@
 import Widget from "resource:///com/github/Aylur/ags/widget.js";
+import Battery from "resource:///com/github/Aylur/ags/service/battery.js";
 import { Tray } from "../modules/tray.js";
 import { bluetoothPill, NotificationIndicator } from "../../.commonwidgets/statusicons.js";
 import Clock from "../modules/clock.js";
@@ -7,7 +8,7 @@ import PrayerTimesWidget from "../modules/prayertimes.js";
 import WeatherOnly from "../modules/weatherOnly.js";
 import NormalOptionalWorkspaces from "../normal/workspaces_hyprland.js";
 import SystemResources from "../normal/resources.js";
-import BatteryScaleModule from "../modules/battery_scale.js";
+import { BatteryScaleModule } from "../modules/battery_scale.js";
 import scrolledmodule from "../../.commonwidgets/scrolledmodule.js";
 const Box = Widget.Box;
 
@@ -42,12 +43,20 @@ export const SaadiBar = Widget.CenterBox({
           NetworkSpeed()
         ]
       }),
+      // Create a container that will show/hide based on battery availability
       Box({
         className: "group-saadi",
-        css:`padding-left: 0`,
-        children: [
-          BatteryScaleModule()
-        ]
+        css: `padding-left: 0`,
+        setup: (self) => {
+          // Initial visibility
+          self.visible = Battery?.available || false;
+
+          // Update visibility when battery availability changes
+          self.hook(Battery, () => {
+            self.visible = Battery?.available || false;
+          });
+        },
+        children: [BatteryScaleModule()]
       })
     ]
   }),
@@ -86,7 +95,7 @@ export const SaadiBar = Widget.CenterBox({
                 children: [
                   WeatherOnly()
                 ],
-              }),    
+              }),
             ]
           }),
           Widget.Box({

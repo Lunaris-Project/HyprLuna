@@ -2,7 +2,15 @@
   "muslim": {
     "enabled": true,
     "prayerTimes": {
-      "city": "Cairo"
+      "city": "Cairo",
+      "country": "Egypt"
+    },
+    "adhanFiles": {
+      "fajr": "adhan_fajr.mp3",
+      "dhuhr": "adhan_default.mp3",
+      "asr": "adhan_default.mp3",
+      "maghrib": "adhan_default.mp3",
+      "isha": "adhan_default.mp3"
     }
   },
   "indicators": {
@@ -21,12 +29,13 @@
     "enabled": true
   },
   "desktopBackground": {
-    "CurrentMode": "Normal",
+    "Auva": true,
     "enabled": true,
     "enableWisecat": false,
     "zoomEffect": true,
     "resources": true,
-    "visible": false
+    "visible": true,
+    "quickLaunches": true
   },
   "ai": {
     "defaultGPTProvider": "deepseek-r1",
@@ -128,7 +137,8 @@
     "siderightTheme": "sideright_bottom",
     "ModuleCalendar": {
       "enabled": true,
-      "visible": true
+      "visible": true,
+      "default": "todo"
     },
     "showAnimeCat": true,
     "centerModules": {
@@ -329,6 +339,7 @@
     "enabled": true,
     "hiddenThickness": 7,
     "dockSize": 36,
+    "exclusivity": "exclusive",
     "pinnedApps": [
       "zen-browser",
       "spotube",
@@ -406,8 +417,8 @@
         "prevTab": "Page_Up"
       },
       "options": {
-        "nextTab": "Page_Down",
-        "prevTab": "Page_Up"
+        "nextTab": "Ctrl+l",
+        "prevTab": "Ctrl+h"
       },
       "pin": "Ctrl+p",
       "cycleTab": "Ctrl+Tab",
@@ -429,6 +440,7 @@
     "traySize": 16,
     "floatingWidth": 14,
     "floatingElevation": 1,
+    "monitorMode": "primary",
     "verticalBar": {
       "position": "left"
     },
@@ -451,7 +463,9 @@
       "showResources": true,
       "showMusic": true,
       "showBattery": true,
-      "showAvatar": true
+      "showAvatar": true,
+      "showTray": true,
+      "showKbdLayout": true
     }
   },
   "etc": {

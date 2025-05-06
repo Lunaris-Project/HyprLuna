@@ -38,7 +38,7 @@ const getFontWeightName = (weight) => {
 
 // Number style conversion functions
 const numberStyles = {
-    'arabic': (n) => n.toString(),
+    'arabic': (n) => n.toString().replace(/[0-9]/g, d => '٠١٢٣٤٥٦٧٨٩'[d]),
     'thai': (n) => n.toString().replace(/[0-9]/g, d => '๐๑๒๓๔๕๖๗๘๙'[d]),
     'japanese': (n) => n.toString().replace(/[0-9]/g, d => '〇一二三四五六七八九'[d]),
     'chinese': (n) => n.toString().replace(/[0-9]/g, d => '零一二三四五六七八九'[d]),

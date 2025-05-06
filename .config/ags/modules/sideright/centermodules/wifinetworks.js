@@ -17,479 +17,64 @@ const MATERIAL_SYMBOL_SIGNAL_STRENGTH = {
     'network-wireless-signal-none-symbolic': "signal_wifi_0_bar",
 }
 
-// Helper function for translations
-function getString(str) {
-    // This is a simple implementation - in a real app, this would connect to a translation system
-    return str;
-}
 
-// Resource management utilities
-const ResourceManager = {
-    timeouts: new Set(),
-    intervals: new Set(),
-    
-    setTimeout(callback, delay) {
-        const id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
-            this.timeouts.delete(id);
-            return callback() || GLib.SOURCE_REMOVE;
-        });
-        this.timeouts.add(id);
-        return id;
-    },
-    
-    clearTimeout(id) {
-        if (this.timeouts.has(id)) {
-            GLib.source_remove(id);
-            this.timeouts.delete(id);
-        }
-    },
-    
-    setInterval(callback, delay) {
-        const id = GLib.timeout_add(GLib.PRIORITY_DEFAULT, delay, () => {
-            if (callback()) {
-                return GLib.SOURCE_CONTINUE;
-            }
-            this.intervals.delete(id);
-            return GLib.SOURCE_REMOVE;
-        });
-        this.intervals.add(id);
-        return id;
-    },
-    
-    clearInterval(id) {
-        if (this.intervals.has(id)) {
-            GLib.source_remove(id);
-            this.intervals.delete(id);
-        }
-    },
-    
-    clearAll() {
-        for (const id of this.timeouts) {
-            GLib.source_remove(id);
-        }
-        this.timeouts.clear();
-        
-        for (const id of this.intervals) {
-            GLib.source_remove(id);
-        }
-        this.intervals.clear();
-    }
-};
-
-// Safe widget operations
-const SafeOps = {
-    isValidWidget(widget) {
-        if (!widget) return false;
-        try {
-            return widget.get_parent() !== null;
-        } catch (e) {
-            return false;
-        }
-    },
-    
-    safeSet(widget, property, value) {
-        if (!this.isValidWidget(widget)) return false;
-        try {
-            widget[property] = value;
-            return true;
-        } catch (e) {
-            return false;
-        }
-    },
-    
-    safeConnect(widget, signal, callback) {
-        if (!this.isValidWidget(widget)) return null;
-        try {
-            return widget.connect(signal, callback);
-        } catch (e) {
-            return null;
-        }
-    },
-    
-    safeDisconnect(widget, handlerId) {
-        if (!widget || !handlerId) return;
-        try {
-            widget.disconnect(handlerId);
-        } catch (e) {
-            // Silent error handling
-        }
-    }
-};
-
-// Improved signal management system
-class SignalManager {
-    constructor() {
-        this._connections = new WeakMap();
-    }
-
-    connect(widget, signal, callback) {
-        if (!widget || !signal || !callback) return null;
-        
-        try {
-            // Verify widget is still valid
-            if (!widget.get_parent) return null;
-            
-            // Create or get the widget's signal map
-            let signals = this._connections.get(widget);
-            if (!signals) {
-                signals = new Map();
-                this._connections.set(widget, signals);
-            }
-
-            // If there's an existing handler, disconnect it first
-            if (signals.has(signal)) {
-                try {
-                    const oldHandler = signals.get(signal);
-                    if (oldHandler && oldHandler > 0) {
-                        widget.disconnect(oldHandler);
-                    }
-                } catch (e) {
-                    console.debug(`Failed to disconnect old handler for ${signal}:`, e);
-                }
-                signals.delete(signal);
-            }
-
-            // Connect the signal and store the handler ID
-            const handlerId = widget.connect(signal, callback);
-            if (handlerId && handlerId > 0) {
-                signals.set(signal, handlerId);
-                return handlerId;
-            }
-        } catch (e) {
-            console.debug(`Failed to connect signal ${signal}:`, e);
-        }
-        return null;
-    }
-
-    disconnect(widget, signal) {
-        if (!widget) return;
-        
-        try {
-            const signals = this._connections.get(widget);
-            if (signals && signals.has(signal)) {
-                const handlerId = signals.get(signal);
-                if (handlerId && handlerId > 0) {
-                    try {
-                        widget.disconnect(handlerId);
-                    } catch (e) {
-                        console.debug(`Failed to disconnect signal ${signal}:`, e);
-                    }
-                }
-                signals.delete(signal);
-                
-                // Clean up the map if it's empty
-                if (signals.size === 0) {
-                    this._connections.delete(widget);
-                }
-            }
-        } catch (e) {
-            console.debug(`Failed to handle disconnect for ${signal}:`, e);
-        }
-    }
-
-    disconnectAll(widget) {
-        if (!widget) return;
-        
-        try {
-            const signals = this._connections.get(widget);
-            if (signals) {
-                for (const [signal, handlerId] of signals) {
-                    if (handlerId && handlerId > 0) {
-                        try {
-                            widget.disconnect(handlerId);
-                        } catch (e) {
-                            console.debug(`Failed to disconnect signal ${signal}:`, e);
-                        }
-                    }
-                }
-                signals.clear();
-                this._connections.delete(widget);
-            }
-        } catch (e) {
-            console.debug('Failed to disconnect all signals:', e);
-            // Ensure the widget is removed from connections even if disconnection fails
-            this._connections.delete(widget);
-        }
-    }
-}
-
-const signalManager = new SignalManager();
-
-// Improved SafeNetworkHooks class
-class SafeNetworkHooks {
-    constructor() {
-        this._widgets = new Map();
-        this._isDestroyed = false;
-        this._updateTimeout = null;
-        this._cleanupInterval = null;
-        this._networkChangedHandler = null;
-        
-        // Setup a global Network signal handler with debouncing
-        try {
-        this._networkChangedHandler = Network.connect('changed', () => {
-            if (this._isDestroyed) return;
-            
-            if (this._updateTimeout) {
-                    ResourceManager.clearTimeout(this._updateTimeout);
-            }
-            
-                this._updateTimeout = ResourceManager.setTimeout(() => {
-                this._safeDispatch();
-                }, 50);
-            });
-        } catch (e) {
-            console.debug('Failed to connect to Network changed signal:', e);
-        }
-        
-        this._cleanupInterval = ResourceManager.setInterval(() => {
-            return !this._isDestroyed && this._cleanup();
-        }, 5000);
-    }
-    
-    destroy() {
-        if (this._isDestroyed) return;
-        this._isDestroyed = true;
-        
-        // Clear timeouts first
-        if (this._updateTimeout) {
-            ResourceManager.clearTimeout(this._updateTimeout);
-            this._updateTimeout = null;
-        }
-        
-        if (this._cleanupInterval) {
-            ResourceManager.clearInterval(this._cleanupInterval);
-            this._cleanupInterval = null;
-        }
-        
-        // Disconnect network handler if it exists and is valid
-        if (this._networkChangedHandler && this._networkChangedHandler > 0) {
-            try {
-                Network.disconnect(this._networkChangedHandler);
-            } catch (e) {
-                console.debug('Failed to disconnect network handler:', e);
-            }
-            this._networkChangedHandler = null;
-        }
-        
-        // Clean up all widget connections
-        for (const [widget, state] of this._widgets) {
-            if (state.destroyHandler && state.destroyHandler > 0) {
-                try {
-                    signalManager.disconnect(widget, 'destroy');
-                } catch (e) {
-                    console.debug('Failed to disconnect widget destroy handler:', e);
-                }
-            }
-        }
-        this._widgets.clear();
-    }
-    
-    register(widget, callback) {
-        if (!widget || !callback || this._isDestroyed) return null;
-        
-        const state = {
-            callback,
-            isDestroyed: false,
-            destroyHandler: null
-        };
-        
-        // Setup destroy handler using SignalManager
-        try {
-            state.destroyHandler = signalManager.connect(widget, 'destroy', () => {
-                state.isDestroyed = true;
-                this._widgets.delete(widget);
-            });
-        } catch (e) {
-            console.debug('Failed to connect widget destroy handler:', e);
-            return null;
-        }
-        
-        this._widgets.set(widget, state);
-        
-        // Schedule an initial update
-        ResourceManager.setTimeout(() => {
-            if (!this._isDestroyed && !state.isDestroyed) {
-                try {
-                    callback(Network);
-            } catch (e) {
-                    console.debug('Failed to execute callback:', e);
-                }
-            }
-            return false;
-        }, 10);
-        
-        return state;
-    }
-    
-    _safeDispatch() {
-        if (this._isDestroyed) return;
-        
-        for (const [widget, state] of this._widgets) {
-            if (state.isDestroyed) continue;
-            
-            try {
-                if (widget && widget.get_parent()) {
-                    state.callback(Network);
-                } else {
-                    state.isDestroyed = true;
-                    if (state.destroyHandler && state.destroyHandler > 0) {
-                        try {
-                            signalManager.disconnect(widget, 'destroy');
-            } catch (e) {
-                            console.debug('Failed to disconnect widget destroy handler:', e);
-                        }
-                    }
-                    this._widgets.delete(widget);
-                }
-            } catch (e) {
-                console.debug('Failed to dispatch:', e);
-                state.isDestroyed = true;
-                if (state.destroyHandler && state.destroyHandler > 0) {
-                    try {
-                        signalManager.disconnect(widget, 'destroy');
-            } catch (e) {
-                        console.debug('Failed to disconnect widget destroy handler:', e);
-            }
-                }
-                this._widgets.delete(widget);
-            }
-        }
-    }
-    
-    _cleanup() {
-        if (this._isDestroyed) return false;
-        
-        for (const [widget, state] of this._widgets) {
-            try {
-                if (!widget || !widget.get_parent()) {
-                    if (state.destroyHandler && state.destroyHandler > 0) {
-                        try {
-                            signalManager.disconnect(widget, 'destroy');
-            } catch (e) {
-                            console.debug('Failed to disconnect widget destroy handler:', e);
-                        }
-                    }
-                    this._widgets.delete(widget);
-                }
-            } catch (e) {
-                console.debug('Failed to cleanup widget:', e);
-                this._widgets.delete(widget);
-            }
-        }
-        
-        return true;
-    }
-}
-
-// Create a single instance of SafeNetworkHooks
-const networkHooks = new SafeNetworkHooks();
-
-// Helper function to safely update a label with Network data
-function safeUpdateLabel(label, value, defaultValue = '') {
-    if (!label?.get_parent()) return;
-    
-    try {
-        label.label = value || defaultValue;
-                } catch (e) {
-        console.debug('Failed to update label:', e);
-    }
-}
-
-// Improved network label setup using AGS v1 hooks
-function setupNetworkLabel(label, callback) {
-    if (!label) return;
-    
-    // Use Widget.hook() for automatic signal cleanup
-    label.hook(Network, () => {
-        if (label?.get_parent()) {
-            callback(Network);
-        }
-    });
-}
-
-// Create the network status widget using AGS v1 bindings
-const NetworkStatus = () => Label({
-    className: 'txt-subtext',
-    vpack: 'center',
-    // Bind the label directly to Network.wifi.state
-    setup: (self) => {
-        self.hook(Network, () => {
-            self.label = Network.wifi?.state || '';
-        });
-    },
-});
-
-// Create the network name widget using AGS v1 bindings
-const NetworkName = () => Box({
-    vertical: true,
-    hexpand: true,
-    children: [
-        Label({
-            className: 'txt-smaller txt-subtext',
-            label: getString("Current network"),
-        }),
-        Label({
-            hpack: 'start',
-            setup: (self) => {
-                self.hook(Network, () => {
-                    self.label = Network.wifi?.ssid || getString('Not Connected');
-                });
-            },
-        }),
-    ],
-});
-
-// Track active password entry to prevent it from disappearing
-let activePasswordEntry = null;
-let activePasswordSSID = null;
 let connectAttempt = '';
+let networkAuth = null;
+let networkAuthSSID = null;
 
-// Helper function to check if a network is already registered
-async function isNetworkRegistered(ssid) {
-    try {
-        // Get all connection profiles
-        const result = await execAsync(['nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show']);
-        const connections = result.split('\n').filter(Boolean);
-        
-        // Check for exact matches and case-insensitive matches
-        const isRegistered = connections.some(conn => {
-            const [name, type] = conn.split(':');
-            if (type !== 'wifi') return false;
-            
-            // Check for exact match or case-insensitive match
-            return name === ssid || 
-                   name.startsWith(`${ssid}_`) || 
-                   name.toLowerCase() === ssid.toLowerCase() ||
-                   name.toLowerCase().startsWith(`${ssid.toLowerCase()}_`);
-        });
-        
-        // If we found a match, log it and return true
-        if (isRegistered) {
-            return true;
-        }
-        
-        return false;
-    } catch (e) {
-        // Silent error handling
-        return false;
-    }
-}
+const WifiNetwork = (accessPoint) => {
+    const networkStrength = MaterialIcon(MATERIAL_SYMBOL_SIGNAL_STRENGTH[accessPoint.iconName], 'hugerass')
+    const networkName = Box({
+        vertical: true,
+        children: [
+            Label({
+                hpack: 'start',
+                label: accessPoint.ssid
+            }),
+            accessPoint.active ? Label({
+                hpack: 'start',
+                className: 'txt-smaller txt-subtext',
+                label: getString("Selected"),
+            }) : null,
+        ]
+    });
+    return Button({
+        onClicked: accessPoint.active ? () => { } : () => {
+            connectAttempt = accessPoint.ssid;
+            networkAuthSSID.label = `${getString('Connecting to')}: ${connectAttempt}`;
 
-// Helper function to get all connection profiles for a specific SSID
-async function getConnectionsForSSID(ssid) {
-    try {
-        const result = await execAsync(['nmcli', '-t', '-f', 'NAME,TYPE', 'connection', 'show']);
-        const connections = result.split('\n').filter(Boolean);
-        return connections
-            .filter(conn => {
-                const [name, type] = conn.split(':');
-                return type === 'wifi' && (name === ssid || name.startsWith(`${ssid}_`));
-            })
-            .map(conn => conn.split(':')[0]);
-    } catch (e) {
-        // Silent error handling
-        return [];
-    }
+            // Check if the SSID is stored
+            execAsync(['nmcli', '-g', 'NAME', 'connection', 'show'])
+                .then((savedConnections) => {
+                    const savedSSIDs = savedConnections.split('\n');
+
+                    if (!savedSSIDs.includes(connectAttempt)) { // SSID not saved: show password input
+                        if (networkAuth) {
+                            networkAuth.revealChild = true;
+                        }
+                    } else { // If SSID is saved, hide password input
+                        if (networkAuth) {
+                            networkAuth.revealChild = false;
+                        }
+                        // Connect
+                        execAsync(['nmcli', 'device', 'wifi', 'connect', connectAttempt])
+                            .catch(print);
+                    }
+                })
+                .catch(print);
+
+        },
+        child: Box({
+            className: 'sidebar-wifinetworks-network spacing-h-10',
+            children: [
+                networkStrength,
+                networkName,
+                Box({ hexpand: true }),
+                accessPoint.active ? MaterialIcon('check', 'large') : null,
+            ],
+        }),
+        setup: accessPoint.active ? () => { } : setupCursorHover,
+    })
 }
 
 const NetResource = (icon, command) => {
@@ -514,445 +99,231 @@ const NetResource = (icon, command) => {
     return widget;
 }
 
-// Improved WifiNetwork component using AGS v1 features
-const WifiNetwork = (ap) => {
-    const state = {
-        connecting: false,
-        expanded: false,
-    };
+const CurrentNetwork = () => {
+    let passwordVisible = false;
+    let authLock = false;
+    let timeoutId = null;
 
-    // Create the password entry
-    const passwordEntry = Entry({
-        className: 'sidebar-wifinetworks-password-entry',
-        setup: self => {
-            self.placeholderText = getString('Password');
-        },
-        visibility: false,
-        onAccept: () => connect(),
+    const bottomSeparator = Box({
+        className: 'separator-line',
     });
-
-    // Create the password toggle button
-    const passwordToggle = Button({
-        className: 'sidebar-wifinetworks-password-toggle',
-        child: MaterialIcon('visibility', 'small'),
-        setup: setupCursorHover,
-        onClicked: () => {
-            passwordEntry.visibility = !passwordEntry.visibility;
-            passwordToggle.child = MaterialIcon(
-                passwordEntry.visibility ? 'visibility_off' : 'visibility',
-                'small'
-            );
-        },
-    });
-
-    // Create the connect button
-    const connectButton = Button({
-        className: 'sidebar-wifinetworks-connect-button',
-        child: Box({
+    const networkName = Box({
+        vertical: true,
+        hexpand: true,
         children: [
-                MaterialIcon('wifi', 'small'),
-                Label(getString('Connect')),
-            ],
-        }),
-        setup: setupCursorHover,
-        onClicked: () => connect(),
-    });
-
-    // Create the password box
-    const passwordBox = Box({
-        className: 'spacing-h-5',
-        children: [
-            passwordEntry,
-            passwordToggle,
-            connectButton,
-        ],
-    });
-
-    // Create the password revealer
-    const passwordRevealer = Revealer({
-        transition: 'slide_down',
-        transitionDuration: userOptions.asyncGet().animations.durationSmall,
-        revealChild: false,
-        child: passwordBox,
-    });
-
-    // Function to connect to the network
-    const connect = async () => {
-        if (state.connecting) return;
-        state.connecting = true;
-        connectButton.sensitive = false;
-
-        try {
-            await Network.wifi?.connectToAP(ap, passwordEntry.text);
-            
-            // Clear password and hide entry on success
-            passwordEntry.text = '';
-            state.expanded = false;
-            passwordRevealer.revealChild = false;
-            
-                        Utils.notify({
-                summary: getString('WiFi Connected'),
-                body: `${getString('Successfully connected to')} ${ap.ssid}`,
-                iconName: 'network-wireless-connected-symbolic',
-            });
-        } catch (error) {
-            Utils.notify({
-                summary: getString('Error'),
-                body: `${getString('Failed to connect to')} ${ap.ssid}: ${error}`,
-                iconName: 'dialog-error-symbolic',
-                            urgency: 'critical',
-                        });
-        } finally {
-            state.connecting = false;
-            connectButton.sensitive = true;
-        }
-    };
-
-    // Create the network button
-    const networkButton = Button({
-        className: 'sidebar-wifinetworks-network',
-        child: Box({
-            children: [
-                MaterialIcon(ap.strength > 66 ? 'wifi' : 
-                           ap.strength > 33 ? 'wifi_2_bar' : 'wifi_1_bar', 'small'),
-                Label(ap.ssid || getString('Hidden Network')),
-                Box({ hexpand: true }),
-                MaterialIcon(ap.active ? 'check' : 'chevron_right', 'small'),
-                    ],
+            Label({
+                hpack: 'start',
+                className: 'txt-smaller txt-subtext',
+                label: getString("Current network"),
+            }),
+            Label({
+                hpack: 'start',
+                label: Network.wifi?.ssid,
+                setup: (self) => self.hook(Network, (self) => {
+                    if (authLock) return;
+                    self.label = Network.wifi?.ssid;
                 }),
-                            setup: setupCursorHover,
-                            onClicked: () => {
-            if (ap.active) return;
-            
-            state.expanded = !state.expanded;
-            passwordRevealer.revealChild = state.expanded;
-            
-            if (state.expanded) {
-                passwordEntry.text = '';
-                passwordEntry.grab_focus();
-            }
-        },
+            }),
+        ]
     });
-
-    return Box({
+    const networkBandwidth = Box({
         vertical: true,
-        className: 'spacing-v-5',
+        hexpand: true,
+        hpack: 'end',
+        className: 'sidebar-wifinetworks-bandwidth',
         children: [
-            networkButton,
-            passwordRevealer,
-        ],
+            NetResource('arrow_warm_up', `${App.configDir}/scripts/network_bandwidth.sh sent`),
+            NetResource('arrow_cool_down', `${App.configDir}/scripts/network_bandwidth.sh recv`),
+        ]
     });
-};
-
-// Improved network list using AGS v1 features
-const NetworkList = () => {
-    const state = {
-        networks: [],
-        scanning: false,
-    };
-
-    const updateNetworks = () => {
-        if (!Network.wifi?.accessPoints) {
-            networksBox.children = [];
-            return;
-        }
-        
-        // Sort networks by strength
-        const sortedNetworks = [...Network.wifi.accessPoints].sort((a, b) => b.strength - a.strength);
-        
-        // Update the list while preserving expanded state
-        const oldChildren = new Map(networksBox.children.map(child => [
-            child._ap?.ssid,
-            child.children[1]?.revealChild || false
-        ]));
-        
-        networksBox.children = sortedNetworks.map(ap => {
-            const widget = WifiNetwork(ap);
-            // Restore expanded state if it existed
-            if (oldChildren.has(ap.ssid)) {
-                widget.children[1].revealChild = oldChildren.get(ap.ssid);
-            }
-            widget._ap = ap; // Store reference for state preservation
-            return widget;
-        });
-    };
-
-    const networksBox = Box({
-        vertical: true,
-        className: 'spacing-v-5',
-        connections: [['destroy', self => {
-            self._wifiHook?.disconnect();
-        }]],
+    // const networkStatus = Box({
+    //     children: [Label({
+    //         vpack: 'center',
+    //         className: 'txt-subtext',
+    //         setup: (self) => self.hook(Network, (self) => {
+    //             if (authLock) return;
+    //             self.label = Network.wifi.state;
+    //         }),
+    //     })]
+    // });
+    networkAuthSSID = Label({
+        className: 'margin-left-5',
+        hpack: 'start',
+        hexpand: true,
+        label: '',
     });
-
-    const scanButton = Button({
-        className: 'sidebar-button txt-norm',
-        child: Box({
-            className: 'spacing-h-5',
-            children: [
-                MaterialIcon('refresh', 'small'),
-                Label(getString('Scan')),
-            ],
-        }),
-        setup: setupCursorHover,
+    const cancelAuthButton = Button({
+        className: 'txt sidebar-wifinetworks-network-button',
+        label: getString('Cancel'),
+        hpack: 'end',
         onClicked: () => {
-            if (state.scanning) return;
-            
-            state.scanning = true;
-            scanButton.sensitive = false;
-            
-            Network.wifi?.scan()
-                    .catch(error => {
-                            Utils.notify({
-                        summary: getString('Error'),
-                        body: `${getString('Failed to scan for networks')}: ${error}`,
-                        iconName: 'dialog-error-symbolic',
-                                urgency: 'critical',
-                            });
+            passwordVisible = false;
+            authEntry.visibility = false;
+            networkAuth.revealChild = false;
+            authFailed.revealChild = false;
+            networkAuthSSID.label = '';
+            networkName.children[1].label = Network.wifi?.ssid;
+            authEntry.text = '';
+        },
+        setup: setupCursorHover,
+    });
+    const authHeader = Box({
+        vertical: false,
+        hpack: 'fill',
+        spacing: 10,
+        children: [
+            networkAuthSSID,
+            cancelAuthButton
+        ]
+    });
+    const authVisible = Button({
+        vpack: 'center',
+        child: MaterialIcon('visibility', 'large'),
+        className: 'txt sidebar-wifinetworks-auth-visible',
+        onClicked: (self) => {
+            passwordVisible = !passwordVisible;
+            authEntry.visibility = passwordVisible;
+            self.child.label = passwordVisible ? 'visibility_off' : 'visibility';
+        },
+        setup: setupCursorHover,
+    });
+    const authFailed = Revealer({
+        revealChild: false,
+        child: Label({
+            className: 'txt txt-italic txt-subtext',
+            label: getString('Authentication failed'),
+        }),
+    })
+    const authEntry = Entry({
+        className: 'sidebar-wifinetworks-auth-entry',
+        visibility: false,
+        hexpand: true,
+        onAccept: (self) => {
+            authLock = false;
+            // Delete SSID connection before attempting to reconnect
+            execAsync(['nmcli', 'connection', 'delete', connectAttempt])
+                .catch(() => { }); // Ignore error if SSID not found
+
+            execAsync(['nmcli', 'device', 'wifi', 'connect', connectAttempt, 'password', self.text])
+                .then(() => {
+                    connectAttempt = ''; // Reset SSID after successful connection
+                    networkAuth.revealChild = false; // Hide input if successful
+                    authFailed.revealChild = false; // Hide failed message if successful
+                    self.text = ''; // Empty input for retry
+                    passwordVisible = false;
+                    authEntry.visibility = false;
                 })
-                .finally(() => {
-                    state.scanning = false;
-                    scanButton.sensitive = true;
+                .catch(() => {
+                    // Connection failed, show password input again
+                    networkAuth.revealChild = true;
+                    authFailed.revealChild = true;
                 });
         },
+        placeholderText: getString('Enter network password'),
     });
-
-    return Box({
-        vertical: true,
-        className: 'spacing-v-5',
-        connections: [['destroy', self => {
-            self._networkHook?.disconnect();
-        }]],
-        setup: (self) => {
-            // Hook into network changes
-            self._networkHook = self.hook(Network, () => {
-                if (!Network.wifi) {
-                    networksBox.children = [];
-                return;
-            }
-            
-                // Update networks list
-                updateNetworks();
-                
-                // Re-hook the access points signal if wifi service changed
-                networksBox._wifiHook?.disconnect();
-                networksBox._wifiHook = networksBox.hook(Network.wifi, updateNetworks, 'notify::access-points');
-            }, 'notify::wifi');
-        },
+    const authBox = Box({
+        className: 'sidebar-wifinetworks-auth-box',
         children: [
-            scanButton,
-            networksBox,
-        ],
-        });
-    };
-    
-const handleConfirmation = async (action, state, actionsRevealer, confirmationRevealer) => {
-    const ssid = Network.wifi?.ssid;
-    if (!ssid) return;
-
-    try {
-        if (action === 'forget') {
-            // Find and remove all connections for this SSID
-            const connections = await execAsync(`nmcli -t -f NAME,TYPE connection show | grep ":wifi$" | grep -i "^${ssid}\\(_\\|:\\|$\\)" | cut -d':' -f1`);
-            
-            // Disconnect first
-            await execAsync('nmcli device disconnect wlan0');
-            
-            // Delete each connection
-            for (const conn of connections.split('\n').filter(Boolean)) {
-                await execAsync(['nmcli', 'connection', 'delete', conn]);
-            }
-            
-            // Remove secrets from keyring if available
-            try {
-                await execAsync(['secret-tool', 'clear', 'network', ssid]);
-            } catch (e) {
-                // Ignore keyring errors
-            }
-            
-            Utils.notify({
-                summary: getString("WiFi Network Forgotten"),
-                body: `${getString("Successfully forgot")} ${ssid}.`,
-                iconName: 'network-wireless-disconnected-symbolic',
-            });
-        } else if (action === 'disconnect') {
-            const activeConn = await execAsync(`nmcli -t -f NAME,DEVICE connection show --active | grep ":wlan0$" | cut -d':' -f1`);
-            
-            if (activeConn) {
-                // Temporarily disable autoconnect
-                await execAsync(['nmcli', 'connection', 'modify', activeConn.trim(), 'connection.autoconnect', 'no']);
-                
-                // Disconnect
-                await execAsync('nmcli device disconnect wlan0');
-                
-                // Re-enable autoconnect
-                await execAsync(['nmcli', 'connection', 'modify', activeConn.trim(), 'connection.autoconnect', 'yes']);
-            } else {
-                // Just disconnect if no active connection
-                await execAsync('nmcli device disconnect wlan0');
-            }
-            
-                Utils.notify({
-                summary: getString("WiFi Disconnected"),
-                body: getString("Successfully disconnected from WiFi network."),
-                    iconName: 'network-wireless-disconnected-symbolic',
-            });
-        }
-    } catch (error) {
-        Utils.notify({
-            summary: getString("Error"),
-            body: `${getString(action === 'forget' ? "Failed to forget" : "Failed to disconnect")}: ${error}`,
-            iconName: 'dialog-error-symbolic',
-            urgency: 'critical',
-        });
-    } finally {
-        // Reset UI state
-        if (state) {
-            state.confirmationExpanded = false;
-            state.actionsExpanded = false;
-        }
-        if (confirmationRevealer) {
-            confirmationRevealer.revealChild = false;
-        }
-        if (actionsRevealer) {
-            actionsRevealer.revealChild = false;
-        }
-    }
-};
-
-const CurrentNetwork = () => {
-    const state = {
-        actionsExpanded: false,
-        confirmationExpanded: false,
-        confirmationAction: '',
-    };
-    
-    // Create the action buttons revealer
-    const actionButtons = Box({
-        className: 'spacing-h-5 margin-top-5',
-        homogeneous: true,
-        children: [
-            Button({
-                className: 'sidebar-button txt-norm icon-material',
-                child: Box({
-                    className: 'spacing-h-5',
-                    children: [
-                        MaterialIcon('delete', 'small'),
-                        Label(getString('Forget')),
-                    ],
-                }),
-                setup: setupCursorHover,
-                onClicked: () => {
-                    state.confirmationAction = 'forget';
-                    state.confirmationExpanded = true;
-                    confirmationRevealer.revealChild = true;
-                    actionsRevealer.revealChild = false;
-                },
-            }),
-            Button({
-                className: 'sidebar-button txt-norm icon-material',
-                child: Box({
-                    className: 'spacing-h-5',
-                    children: [
-                        MaterialIcon('wifi_off', 'small'),
-                        Label(getString('Disconnect')),
-                    ],
-                }),
-                setup: setupCursorHover,
-                onClicked: () => {
-                    state.confirmationAction = 'disconnect';
-                    state.confirmationExpanded = true;
-                    confirmationRevealer.revealChild = true;
-                    actionsRevealer.revealChild = false;
-                },
-            }),
-        ],
+            authEntry,
+            authVisible,
+        ]
     });
-    
-    // Create the confirmation buttons revealer
-    const confirmationButtons = Box({
-        className: 'spacing-h-5 margin-top-5',
-        homogeneous: true,
-        children: [
-            Button({
-                className: 'sidebar-button txt-norm icon-material',
-                child: Box({
-                    className: 'spacing-h-5',
-                    children: [
-                        MaterialIcon('close', 'small'),
-                        Label(getString('Cancel')),
-                    ],
-                }),
-                setup: setupCursorHover,
-                onClicked: () => {
-                    state.confirmationExpanded = false;
-                    confirmationRevealer.revealChild = false;
-                    actionsRevealer.revealChild = true;
-                },
-            }),
-            Button({
-                className: 'sidebar-button txt-norm icon-material destructive',
-                child: Box({
-                    className: 'spacing-h-5',
-                    children: [
-                        MaterialIcon('check', 'small'),
-                        Label(getString('Confirm')),
-                    ],
-                }),
-                setup: setupCursorHover,
-                onClicked: () => {
-                    handleConfirmation(state.confirmationAction, state, actionsRevealer, confirmationRevealer);
-                },
-            }),
-        ],
-    });
-    
-    // Create the revealers
-    const actionsRevealer = Revealer({
-        transition: 'slide_down',
-        transitionDuration: userOptions.asyncGet().animations.durationSmall,
-        revealChild: false,
-        child: actionButtons,
-    });
-    
-    const confirmationRevealer = Revealer({
-        transition: 'slide_down',
-        transitionDuration: userOptions.asyncGet().animations.durationSmall,
-        revealChild: false,
-        child: confirmationButtons,
-    });
-    
-    // Create the expand button
-    const expandButton = Button({
-        className: 'sidebar-button txt-norm icon-material',
-        child: MaterialIcon('more_vert', 'small'),
-        setup: setupCursorHover,
+    const forgetButton = Button({
+        label: getString('Forget'),
+        hexpand: true,
+        className: 'txt sidebar-wifinetworks-network-button',
         onClicked: () => {
-            if (state.confirmationExpanded) {
-                state.confirmationExpanded = false;
-                confirmationRevealer.revealChild = false;
-            } else if (state.actionsExpanded) {
-                state.actionsExpanded = false;
-                actionsRevealer.revealChild = false;
-            } else {
-                state.actionsExpanded = true;
-                actionsRevealer.revealChild = true;
-            }
+            execAsync(['nmcli', '-t', '-f', 'ACTIVE,NAME', 'connection', 'show'])
+                .then(output => {
+                    const activeSSID = output
+                        .split('\n')
+                        .find(line => line.startsWith('yes:'))
+                        ?.split(':')[1];
+
+                    if (activeSSID) {
+                        execAsync(['nmcli', 'connection', 'delete', activeSSID])
+                            .catch(err => Utils.execAsync(['notify-send',
+                                "Network",
+                                `Failed to forget network - Hold to copy\n${err}`,
+                                '-a', 'ags',
+                            ]).catch(print));
+                    }
+                })
+                .catch();
         },
+        setup: setupCursorHover,
     });
-  
-    return Box({
+    const propertiesButton = Button({
+        label: getString('Properties'),
+        className: 'txt sidebar-wifinetworks-network-button',
+        hexpand: true,
+        onClicked: () => {
+            Utils.execAsync('nmcli -t -f uuid connection show --active').then(uuid => {
+                if (uuid.trim()) {
+                    Utils.execAsync(`nm-connection-editor --edit ${uuid.trim()}`);
+                }
+                closeEverything();
+            }).catch(err => Utils.execAsync(['notify-send',
+                "Network",
+                `Failed to get connection UUID - Hold to copy\n${err}`,
+                '-a', 'ags',
+            ]).catch(print));
+        },
+        setup: setupCursorHover,
+    });
+    const networkProp = Revealer({
+        transition: 'slide_down',
+        child: Box({
+            className: 'spacing-h-10',
+            homogeneous: true,
+            children: [
+                propertiesButton,
+                forgetButton,
+            ],
+            setup: setupCursorHover,
+        }),
+        setup: (self) => self.hook(Network, (self) => {
+            if (Network.wifi?.ssid === '') self.revealChild = false;
+            else self.revealChild = true;
+        }),
+    });
+    networkAuth = Revealer({
+        transition: 'slide_down',
+        child: Box({
+            className: 'margin-top-10 spacing-v-5',
             vertical: true,
             children: [
-            Revealer({
-                transition: 'slide_down',
-                transitionDuration: userOptions.asyncGet().animations.durationLarge,
-                    setup: (self) => {
-                    self.hook(Network, () => {
-                        self.revealChild = !!Network.wifi;
-                    });
-                },
-                child: Box({
+                authHeader,
+                authBox,
+                authFailed,
+            ]
+        }),
+        setup: (self) => self.hook(Network, (self) => {
+            execAsync(['nmcli', '-g', 'NAME', 'connection', 'show'])
+                .then((savedConnections) => {
+                    const savedSSIDs = savedConnections.split('\n');
+                    if (Network.wifi.state == 'failed' ||
+                        (Network.wifi.state == 'need_auth' && !savedSSIDs.includes(Network.wifi.ssid))) {
+                        authLock = true;
+                        connectAttempt = Network.wifi.ssid;
+                        self.revealChild = true;
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                        }
+                        timeoutId = setTimeout(() => {
+                            authLock = false;
+                            passwordVisible = false;
+                            authEntry.visibility = false;
+                            self.revealChild = false;
+                            authFailed.revealChild = false;
+                            Network.wifi.state = 'activated';
+                        }, 60000); // 60 seconds timeout
+                    }
+                }
+                ).catch(print);
+        }),
+    });
+    const actualContent = Box({
         vertical: true,
         className: 'spacing-v-10',
         children: [
@@ -961,25 +332,30 @@ const CurrentNetwork = () => {
                 vertical: true,
                 children: [
                     Box({
-                        className: 'spacing-h-10',
+                        className: 'spacing-h-10 margin-bottom-10',
                         children: [
                             MaterialIcon('language', 'hugerass'),
-                                        NetworkName(),
-                            Box({ hexpand: true }),
-                            expandButton,
-                                    ],
+                            networkName,
+                            networkBandwidth,
+                            // networkStatus,
+                        ]
                     }),
-                    actionsRevealer,
-                    confirmationRevealer,
-                            ],
-                        }),
-                        Box({ className: 'separator-line' }),
-                    ],
-                }),
+                    networkProp,
+                    networkAuth
+                ]
             }),
-        ],
+            bottomSeparator,
+        ]
     });
-};
+    return Box({
+        vertical: true,
+        children: [Revealer({
+            transition: 'slide_down',
+            revealChild: Network.wifi,
+            child: actualContent,
+        })]
+    })
+}
 
 export default (props) => {
     const networkList = Box({
@@ -989,7 +365,25 @@ export default (props) => {
             passThrough: true,
             child: Scrollable({
                 vexpand: true,
-                child: NetworkList(),
+                child: Box({
+                    attribute: {
+                        'updateNetworks': (self) => {
+                            const accessPoints = Network.wifi?.access_points || [];
+                            self.children = Object.values(accessPoints.reduce((a, accessPoint) => {
+                                // Only keep max strength networks by ssid
+                                if (!a[accessPoint.ssid] || a[accessPoint.ssid].strength < accessPoint.strength) {
+                                    a[accessPoint.ssid] = accessPoint;
+                                    a[accessPoint.ssid].active |= accessPoint.active;
+                                }
+
+                                return a;
+                            }, {})).map(n => WifiNetwork(n));
+                        },
+                    },
+                    vertical: true,
+                    className: 'spacing-v-5 sidebar-centermodules-scrollgradient-bottom-contentmargin',
+                    setup: (self) => self.hook(Network, self.attribute.updateNetworks),
+                }),
             }),
             overlays: [Box({
                 className: 'sidebar-centermodules-scrollgradient-bottom'
@@ -1002,7 +396,7 @@ export default (props) => {
             hpack: 'center',
             className: 'txt-small txt sidebar-centermodules-bottombar-button',
             onClicked: () => {
-                execAsync(['bash', '-c', userOptions.asyncGet().apps.network]).catch(print);
+                execAsync(['bash', '-c', userOptions.apps.network]).catch(print);
                 closeEverything();
             },
             label: getString('More'),
@@ -1020,9 +414,3 @@ export default (props) => {
         ]
     });
 }
-
-// Cleanup all resources when the module is unloaded
-export const cleanup = () => {
-    networkHooks.destroy();
-    ResourceManager.clearAll();
-};

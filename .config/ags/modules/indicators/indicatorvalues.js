@@ -2,6 +2,7 @@
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import Audio from 'resource:///com/github/Aylur/ags/service/audio.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
+import GLib from 'gi://GLib';
 const { Box, Label, ProgressBar } = Widget;
 import { MarginRevealer } from '../.widgethacks/advancedrevealers.js';
 import Brightness from '../../services/brightness.js';
@@ -84,8 +85,35 @@ const volumeIndicator = OsdValue({
     extraProgressClassName: 'osd-volume-progress',
     attribute: { headphones: undefined, device: undefined },
     nameSetup: (self) => Utils.timeout(1, () => {
+        // Store signal handler IDs for cleanup
+        let audioSignalId = null;
+        let updateTimeout = null;
+        
         const updateAudioDevice = (self) => {
-            const usingHeadphones = (Audio.speaker?.stream?.port)?.toLowerCase().includes('headphone');
+            if (!Audio.speaker?.stream) return;
+            
+            // Access the port property more defensively to minimize warnings
+            let usingHeadphones = false;
+            try {
+                // Try to use get_port() method first if available
+                if (typeof Audio.speaker.stream.get_port === 'function') {
+                    const portInfo = Audio.speaker.stream.get_port();
+                    if (portInfo && portInfo.name) {
+                        usingHeadphones = portInfo.name.toLowerCase().includes('headphone');
+                    }
+                } 
+                // Fallback to direct property access but with type checking
+                else if (Audio.speaker.stream) {
+                    const port = Audio.speaker.stream.port;
+                    // Only use port if it's a string (expected type)
+                    if (typeof port === 'string') {
+                        usingHeadphones = port.toLowerCase().includes('headphone');
+                    }
+                }
+            } catch (e) {
+                // Silently handle any errors
+            }
+
             if (volumeIndicator.attribute.headphones === undefined ||
                 volumeIndicator.attribute.headphones !== usingHeadphones) {
                 volumeIndicator.attribute.headphones = usingHeadphones;
@@ -93,31 +121,62 @@ const volumeIndicator = OsdValue({
                 // Indicator.popup(1);
             }
         }
-        self.hook(Audio, updateAudioDevice);
-        Utils.timeout(1000, updateAudioDevice);
+        
+        // Use hook instead of direct connection for better lifecycle management
+        audioSignalId = self.hook(Audio, updateAudioDevice);
+        
+        // Initial update with a short delay
+        updateTimeout = Utils.timeout(1000, () => {
+            updateAudioDevice(self);
+            updateTimeout = null;
+        });
+        
+        // Clean up on widget destruction
+        self.connect('destroy', () => {
+            // Clear the timeout if it exists
+            if (updateTimeout) {
+                GLib.Source.remove(updateTimeout);
+                updateTimeout = null;
+            }
+            
+            // No need to manually disconnect hooks as they're managed by AGS
+        });
     }),
     labelSetup: (self) => self.hook(Audio, (label) => {
-        const newDevice = (Audio.speaker?.name);
-        const updateValue = Math.round(Audio.speaker?.volume * 100);
-        if (!isNaN(updateValue)) {
-            if (newDevice === volumeIndicator.attribute.device && updateValue != label.label) {
-                Indicator.popup(1);
+        try {
+            const newDevice = Audio.speaker?.name || '';
+            const updateValue = Math.round(Audio.speaker?.volume * 100 || 0);
+            
+            if (!isNaN(updateValue)) {
+                if (newDevice === volumeIndicator.attribute.device && updateValue != label.label) {
+                    Indicator.popup(1);
+                }
             }
-        }
-        volumeIndicator.attribute.device = newDevice;
-        if (updateValue === 0) {
-            label.className = 'osd-value-icon icon-material';
-            label.label = 'volume_off';
-        } else {
-            label.className = "osd-value-txt";
-            label.label = `${updateValue}`;
+            
+            volumeIndicator.attribute.device = newDevice;
+            
+            if (updateValue === 0) {
+                label.className = 'osd-value-icon icon-material';
+                label.label = 'volume_off';
+            } else {
+                label.className = "osd-value-txt";
+                label.label = `${updateValue}`;
+            }
+        } catch (e) {
+            // Silently handle errors
+            label.label = '--';
         }
     }),
     progressSetup: (self) => self.hook(Audio, (progress) => {
-        const updateValue = Audio.speaker?.volume;
-        if (!isNaN(updateValue)) {
-            if (updateValue > 1) progress.value = 1;
-            else progress.value = updateValue;
+        try {
+            const updateValue = Audio.speaker?.volume || 0;
+            
+            if (!isNaN(updateValue)) {
+                progress.value = Math.min(updateValue, 1);
+            }
+        } catch (e) {
+            // Silently handle errors
+            progress.value = 0;
         }
     }),
 });
@@ -132,35 +191,82 @@ const scaleIndicator = OsdValue({
     extraProgressClassName: 'osd-scale-progress',
     labelSetup: (self) => {
         let previousScale = Scale.scaling_value;
+        let signalHandlerId = null;
+        
         // Initialize label with the current value as a percentage.
         self.label = `${(previousScale * 100).toFixed(0)}`;
+        
         // Connect to changes on the "text-scaling-factor".
-        scaleSettings.connect("changed::text-scaling-factor", () => {
-            const newScale = Scale.scaling_value;
-            // Only trigger popup if the value has changed.
-            if (newScale !== previousScale) {
-                Indicator.popup(1);
-                previousScale = newScale;
-            }
-            self.label = `${(newScale * 100).toFixed(0)}`;
-        });
+        try {
+            signalHandlerId = scaleSettings.connect("changed::text-scaling-factor", () => {
+                try {
+                    const newScale = Scale.scaling_value;
+                    // Only trigger popup if the value has changed.
+                    if (newScale !== previousScale) {
+                        Indicator.popup(1);
+                        previousScale = newScale;
+                    }
+                    self.label = `${(newScale * 100).toFixed(0)}`;
+                } catch (e) {
+                    // Silently handle errors
+                }
+            });
+            
+            // Clean up on widget destruction
+            self.connect('destroy', () => {
+                if (signalHandlerId) {
+                    try {
+                        scaleSettings.disconnect(signalHandlerId);
+                    } catch (e) {
+                        // Silently handle errors during disconnect
+                    }
+                    signalHandlerId = null;
+                }
+            });
+        } catch (e) {
+            // Silently handle errors
+        }
     },
     progressSetup: (self) => {
         let previousScale = Scale.scaling_value;
+        let signalHandlerId = null;
+        
         // Initialize progress bar using a normalized fraction of the scaling value.
         const MIN_SCALE = 0.5;
         const MAX_SCALE = 2.0;
+        
         self.value = Math.min(Math.max((previousScale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE), 0), 1);
+        
         // Connect to changes on the scaling factor.
-        scaleSettings.connect("changed::text-scaling-factor", () => {
-            const newScale = Scale.scaling_value;
-            if (newScale !== previousScale) {
-                Indicator.popup(1);
-                previousScale = newScale;
-            }
-            const fraction = (newScale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
-            self.value = Math.min(Math.max(fraction, 0), 1);
-        });
+        try {
+            signalHandlerId = scaleSettings.connect("changed::text-scaling-factor", () => {
+                try {
+                    const newScale = Scale.scaling_value;
+                    if (newScale !== previousScale) {
+                        Indicator.popup(1);
+                        previousScale = newScale;
+                    }
+                    const fraction = (newScale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+                    self.value = Math.min(Math.max(fraction, 0), 1);
+                } catch (e) {
+                    // Silently handle errors
+                }
+            });
+            
+            // Clean up on widget destruction
+            self.connect('destroy', () => {
+                if (signalHandlerId) {
+                    try {
+                        scaleSettings.disconnect(signalHandlerId);
+                    } catch (e) {
+                        // Silently handle errors during disconnect
+                    }
+                    signalHandlerId = null;
+                }
+            });
+        } catch (e) {
+            // Silently handle errors
+        }
     },
 });
 
@@ -171,11 +277,27 @@ export default (monitor = 0) => {
         transition: 'slide_down',
         showClass: 'osd-show',
         hideClass: 'osd-hide',
-        extraSetup: (self) => self
-            .hook(Indicator, (revealer, value) => {
-                if (value > -1) revealer.attribute.show();
-                else revealer.attribute.hide();
-            }, 'popup'),
+        extraSetup: (self) => {
+            // Hook the indicator popup event
+            self.hook(Indicator, (revealer, value) => {
+                try {
+                    if (value > -1) {
+                        if (revealer.attribute && typeof revealer.attribute.show === 'function') {
+                            revealer.attribute.show();
+                        }
+                    } else {
+                        if (revealer.attribute && typeof revealer.attribute.hide === 'function') {
+                            revealer.attribute.hide();
+                        }
+                    }
+                } catch (e) {
+                    // Silently handle errors
+                    console.log("Error in indicator hook:", e);
+                }
+            }, 'popup');
+            
+            return self;
+        },
         child: Box({
             hpack: 'center',
             vertical: false,

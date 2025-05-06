@@ -9,14 +9,15 @@ const UPDATE_INTERVAL = 3 * 60 * 60 * 1000;
 const QuoteWidget = () => {
     // Create widget with initial content
     const label = Label({
-        className: 'txt-small onSurfaceVariant',
+        className: 'txt-norm onSurfaceVariant', // Changed from txt-small to txt-norm for larger text
         label: 'Loading quote...',
         justification: 'left',
         wrap: true,
-        // truncate: 'end',
-        wrapMode: 'word',  // Wrap at word boundaries
-        widthChars: 35,    // Force width to roughly 10rem
-        maxWidthChars: 50, // Maximum width in characters
+        wrapMode: 'word_char',  // Changed to word_char for better wrapping
+        widthChars: 40,    // Force width to roughly 12rem - increased for longer quotes
+        maxWidthChars: 50, // Maximum width in characters - increased for longer quotes
+        css: 'font-size: 1.3em;', // Increased font size from 0.9em to 1.1em
+        // Removed ellipsize to allow text to wrap to new lines instead of truncating
     });
 
     // Create the main widget
@@ -25,10 +26,11 @@ const QuoteWidget = () => {
             label.label = 'Loading...';
             Quotes.fetch();
         },
+        css: 'padding: 5px;', // Add padding but avoid max-height in GTK3
         child: Box({
             className: 'spacing-h-5',
             hexpand: false,
-            vexpand: true,
+            vexpand: false, // Don't expand vertically
             children: [label],
         }),
     });
@@ -45,6 +47,7 @@ const QuoteWidget = () => {
             return;
         }
 
+        // Don't truncate content, let it wrap to new lines
         label.label = `"${Quotes.content}" —${Quotes.author}`;
     };
 

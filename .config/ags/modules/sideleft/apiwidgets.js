@@ -13,6 +13,7 @@ import { chatGPTView, chatGPTCommands, sendMessage as chatGPTSendMessage, chatGP
 import { TranslaterView, translaterCommands, sendMessage as translaterSendMessage, translaterIcon } from './apis/translater.js';
 import { quranView, quranCommands, sendMessage as quranSendMessage, quranTabIcon } from './apis/quran.js';
 import { medicalDictionaryView, medicalDictionaryCommands, sendMessage as medicalDictionarySendMessage, medicalDictionaryTabIcon } from './apis/medicaldictionary.js';
+import { wallpaperView, wallpaperCommands, sendMessage as wallpaperSendMessage, wallpaperTabIcon } from './apis/wallpapers.js';
 
 import { enableClickthrough } from "../.widgetutils/clickthrough.js";
 import { checkKeybind } from '../.widgetutils/keybind.js';
@@ -33,6 +34,14 @@ const APILIST = {
     commandBar: quranCommands,
     tabIcon: quranTabIcon,
     placeholderText: 'وَقُل رَّبِّ زِدْنِي عِلْمًا'
+  },
+  'wallpapers': {
+    name: 'Wallpapers',
+    sendCommand: wallpaperSendMessage,
+    contentWidget: wallpaperView,
+    commandBar: wallpaperCommands,
+    tabIcon: wallpaperTabIcon,
+    placeholderText: 'Describe a wallpaper...'
   },
   'gemini': {
     name: 'Assistant (Gemini Pro)',

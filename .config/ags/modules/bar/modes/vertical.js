@@ -15,7 +15,6 @@ import { VolumeControl } from "../vertical_modules/empty_area.js";
 import { BrightnessControl } from "../vertical_modules/empty_area.js";
 import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
 import { setupCursorHover } from '../../.widgetutils/cursorhover.js';
-import kb_layout from "../modules/kb_layout.js";
 
 export const VerticalBar = Widget.CenterBox({
   className: "bar-floating-outline",
@@ -57,7 +56,7 @@ export const VerticalBar = Widget.CenterBox({
     vexpand:true,
     spacing: 15,
     children:[
-  // VolumeControl(),
+   VolumeControl(),
   StatusIcons(),
   KbLayout(),
 	VerticalClock(),

@@ -65,12 +65,47 @@ const VolumeIndicator = () => {
 
     const widget = Widget.Box({
         child: indicator,
-        setup: self => self.hook(App, (_, windowName, visible) => {
-            if (windowName === 'volume-indicator' && !visible && updateTimeout) {
-                clearTimeout(updateTimeout);
-                updateTimeout = null;
-            }
-        }, 'window-toggled'),
+        setup: self => {
+            // Store signal handler IDs for cleanup
+            let audioHandler = null;
+            
+            // Set up hooks and connections
+            audioHandler = Audio.speaker?.connect?.('changed', () => {
+                const volume = Audio.speaker?.volume || 0;
+                updateValue(volume);
+            });
+            
+            // Clean up resources on destroy
+            self.connect('destroy', () => {
+                // Clean up the timeout
+                if (updateTimeout) {
+                    clearTimeout(updateTimeout);
+                    updateTimeout = null;
+                }
+                
+                // Safely disconnect audio handler
+                if (audioHandler && Audio.speaker) {
+                    if (globalThis.safeDisconnect) {
+                        globalThis.safeDisconnect(Audio.speaker, audioHandler);
+                    } else {
+                        try {
+                            Audio.speaker.disconnect(audioHandler);
+                        } catch (e) {
+                            console.log("Failed to disconnect audio handler:", e);
+                        }
+                    }
+                    audioHandler = null;
+                }
+            });
+            
+            // Window toggled hook
+            self.hook(App, (_, windowName, visible) => {
+                if (windowName === 'volume-indicator' && !visible && updateTimeout) {
+                    clearTimeout(updateTimeout);
+                    updateTimeout = null;
+                }
+            }, 'window-toggled');
+        }
     });
 
     const updateValue = value => {
@@ -85,12 +120,6 @@ const VolumeIndicator = () => {
             updateTimeout = null;
         }, 50);
     };
-
-    // Update on audio changes
-    Audio.speaker.connect('changed', () => {
-        const volume = Audio.speaker?.volume || 0;
-        updateValue(volume);
-    });
 
     // Initial value
     updateValue(Audio.speaker?.volume || 0);

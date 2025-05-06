@@ -54,7 +54,7 @@ export default (overviewMonitor = 0) => {
         const scale = userOpts.overview.scale || 0.24;
         const revealInfoCondition = (Math.min(w, h) * scale > 70);
         if (w <= 0 || h <= 0 || (c === '' && title === '')) return null;
-        
+
         // Screen coordinate adjustments
         if (screenCoords.x != 0) x -= screenCoords.x;
         if (screenCoords.y != 0) y -= screenCoords.y;
@@ -117,7 +117,7 @@ export default (overviewMonitor = 0) => {
                             thisWorkspace: Number(id)
                         }),
                         ContextMenuWorkspaceArray({
-                            label: "Swap windows with workspace", 
+                            label: "Swap windows with workspace",
                             actionFunc: swapWorkspace,
                             thisWorkspace: Number(id)
                         }),
@@ -336,7 +336,7 @@ export default (overviewMonitor = 0) => {
             updateWorkspace: (box, id) => {
                 const offset = Math.floor((Hyprland.active.workspace.id - 1) / NUM_OF_WORKSPACES_SHOWN) * NUM_OF_WORKSPACES_SHOWN;
                 if (!(offset + startWorkspace <= id && id <= offset + startWorkspace + workspaces)) return;
-                
+
                 Hyprland.messageAsync('j/clients').then(clients => {
                     const allClients = JSON.parse(clients);
                     const kids = box.get_children();
@@ -355,20 +355,32 @@ export default (overviewMonitor = 0) => {
             box
                 .hook(overviewTick, (box) => box.attribute.update(box))
                 .hook(Hyprland, (box, clientAddress) => {
-                    const offset = Math.floor((Hyprland.active.workspace.id - 1) / NUM_OF_WORKSPACES_SHOWN) * NUM_OF_WORKSPACES_SHOWN;
-                    const kids = box.get_children();
-                    const client = Hyprland.getClient(clientAddress);
-                    if (!client) return;
-                    const id = client.workspace.id;
-
-                    box.attribute.updateWorkspace(box, id);
-                    kids[id - (offset + startWorkspace)]?.unset(clientAddress);
+                    // Force a full update to ensure all workspaces are in sync
+                    box.attribute.update(box);
                 }, 'client-removed')
                 .hook(Hyprland, (box, clientAddress) => {
-                    const client = Hyprland.getClient(clientAddress);
-                    if (!client) return;
-                    box.attribute.updateWorkspace(box, client.workspace.id);
+                    // Force a full update to ensure all workspaces are in sync
+                    box.attribute.update(box);
                 }, 'client-added')
+                .hook(Hyprland.active, (box) => {
+                    // Update when active client or workspace changes
+                    box.attribute.update(box);
+                })
+                .hook(App, (box, name, visible) => {
+                    // When the glance window becomes visible, update immediately
+                    if ((name === 'overview' || name === 'glance') && visible) {
+                        // Immediately update when window becomes visible
+                        box.attribute.getMonitorMap(box);
+                        box.attribute.update(box);
+
+                        // Then set up a one-time delayed update to catch any changes
+                        // that might have happened during window opening
+                        box.attribute.updateTimeout = Utils.timeout(100, () => {
+                            box.attribute.getMonitorMap(box);
+                            box.attribute.update(box);
+                        });
+                    }
+                }, 'window-toggled')
                 .hook(Hyprland.active.workspace, (box) => {
                     const previousGroup = box.attribute.workspaceGroup;
                     const currentGroup = Math.floor((Hyprland.active.workspace.id - 1) / NUM_OF_WORKSPACES_SHOWN);
@@ -378,9 +390,7 @@ export default (overviewMonitor = 0) => {
                         box.attribute.workspaceGroup = currentGroup;
                     }
                 })
-                .hook(App, (box, name, visible) => {
-                    if (name === 'overview' && visible) box.attribute.update(box);
-                })
+
         },
     });
     const elevate = userOptions.asyncGet().etc.widgetCorners ? "overview-tasks shadow-window overview-round"  : "overview-tasks shadow-window  elevation " ;

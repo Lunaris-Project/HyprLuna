@@ -29,6 +29,9 @@ function getPrevMonthDays(month, year) {
     if ((month <= 7 && month % 2 == 1) || (month >= 8 && month % 2 == 0)) return 30;
     return 31;
 }
+                    
+// If no icon found, use final fallback
+self.icon = 'application-x-executable';
 
 export function getCalendarLayout(dateObject, highlight) {
     if (!dateObject) dateObject = new Date();

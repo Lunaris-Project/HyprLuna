@@ -9,6 +9,8 @@ import { showColorScheme } from '../../variables.js';
 import { MaterialIcon } from '../.commonwidgets/materialicon.js';
 import { darkMode } from '../.miscutils/system.js';
 import { RoundedCorner } from '../.commonwidgets/cairo_roundedcorner.js';
+const elevate = userOptions.asyncGet().etc.widgetCorners ? "osd-round osd-bg osd-colorscheme"  : "osd-bg osd-colorscheme elevation" ;
+
 const ColorBox = ({
     name = 'Color',
     ...rest
@@ -78,16 +80,42 @@ function calculateSchemeInitIndex(optionsArr, searchValue = 'content') {
 }
 const gowallArr = [
     [
+        { name: getString('Arc Dark'), value: 'arcdark' },
+        { name: getString('Atom Dark'), value: 'atomdark' },
+        { name: getString('Cat Frappe'), value: 'cat-frappe' },
+        { name: getString('Cat Latte'), value: 'cat-latte' },
         { name: getString('Catppuccin'), value: 'catppuccin' },
-        { name: getString('Nord'), value: 'nord' },
+        { name: getString('Cyberpunk'), value: 'cyberpunk' },
         { name: getString('Dracula'), value: 'dracula' },
-        { name: getString('Tokyo'), value: 'tokyo-night' },
         { name: getString('Everforest'), value: 'everforest' },
+    ],
+    [
+        { name: getString('GitHub Light'), value: 'github-light' },
         { name: getString('Gruvbox'), value: 'gruvbox' },
+        { name: getString('Kanagawa'), value: 'kanagawa' },
+        { name: getString('Material'), value: 'material' },
+        { name: getString('Monochrome'), value: 'monochrome' },
+        { name: getString('Monokai'), value: 'monokai' },
+        { name: getString('Night Owl'), value: 'night-owl' },
+        { name: getString('Nord'), value: 'nord' },
+    ],
+    [
+        { name: getString('Oceanic Next'), value: 'oceanic-next' },
         { name: getString('One Dark'), value: 'onedark' },
+        { name: getString('Rose Pine'), value: 'rose-pine' },
+        { name: getString('Shades of Purple'), value: 'shades-of-purple' },
         { name: getString('Solarized'), value: 'solarized' },
-        { name: getString('Cyber'), value: 'cyberpunk' },
-        { name: getString('B&W'), value: 'monochrome' },
+        { name: getString('Srcery'), value: 'srcery' },
+        { name: getString('Sunset Aurant'), value: 'sunset-aurant' },
+    ],
+    [
+        { name: getString('Sunset Tangerine'), value: 'sunset-tangerine' },
+        { name: getString('Synthwave 84'), value: 'synthwave-84' },
+        { name: getString('Tokyo Dark'), value: 'tokyo-dark' },
+        { name: getString('Tokyo Moon'), value: 'tokyo-moon' },
+        { name: getString('Tokyo Storm'), value: 'tokyo-storm' },
+        { name: getString('Tokyo Night'), value: 'tokyo-night' },
+        { name: getString('Sunset Saffron'), value: 'sunset-saffron' },
     ],
 ];
 const schemeOptionsArr = [
@@ -161,7 +189,7 @@ const ColorSchemeSettings = () => Widget.Box({
                         try {
                             const vibrancy = newValue == 0 ? "normal" : "vibrant";
                             await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "6s/.*/${vibrancy}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                            await execAsync([`bash`, `-c`, `go run ${App.configDir}/scripts/color_generation/applycolor.go`]);
                         } catch (error) {
                             console.error('Error changing vibrancy:', error);
                         }
@@ -176,7 +204,7 @@ const ColorSchemeSettings = () => Widget.Box({
                         try {
                             const transparency = newValue == 0 ? "opaque" : "transparent";
                             await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "2s/.*/${transparency}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                            await execAsync([`bash`, `-c`, `go run ${App.configDir}/scripts/color_generation/applycolor.go`]);
                         } catch (error) {
                             console.error('Error changing transparency:', error);
                         }
@@ -191,7 +219,7 @@ const ColorSchemeSettings = () => Widget.Box({
                         try {
                             const transparencyMode = newValue == 0 ? "normal" : "intense";
                             await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "7s/.*/${transparencyMode}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                            await execAsync([`bash`, `-c`, `go run ${App.configDir}/scripts/color_generation/applycolor.go`]);
                         } catch (error) {
                             console.error('Error changing transparency:', error);
                         }
@@ -206,7 +234,7 @@ const ColorSchemeSettings = () => Widget.Box({
                         try {
                             const border = newValue == 0 ? "noborder" : "border";
                             await execAsync([`bash`, `-c`, `mkdir -p ${GLib.get_user_state_dir()}/ags/user && sed -i "5s/.*/${border}/"  ${GLib.get_user_state_dir()}/ags/user/colormode.txt`]);
-                            await execAsync(['bash', '-c', `${App.configDir}/scripts/color_generation/applycolor.sh &`]);
+                            await execAsync([`bash`, `-c`, `go run ${App.configDir}/scripts/color_generation/applycolor.go`]);
                         } catch (error) {
                             console.error('Error changing border mode:', error);
                         }
@@ -257,17 +285,17 @@ const ColorSchemeSettings = () => Widget.Box({
         })
     ]
 });
-const topLeftCorner = RoundedCorner('topleft', {
+const topLeftCorner = userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('topleft', {
     className: 'corner corner-colorscheme'
-})
-const topRightCorner = RoundedCorner('topright', {
+}) : null
+const topRightCorner = userOptions.asyncGet().etc.widgetCorners ? RoundedCorner('topright', {
     className: 'corner corner-colorscheme'
-})
+}) : null
 const ColorschemeContent = () =>
     Widget.Box({
         children: [
             Widget.Box({
-                className: 'osd-colorscheme osd-round spacing-v-5',
+                className: `${elevate}`,
                 vertical: true,
                 hpack: 'center',
                 children: [

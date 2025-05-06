@@ -89,33 +89,182 @@ export default ({
     const command = (isPopup ?
         () => notifObject.dismiss() :
         () => notifObject.close()
-    )
+    );
+    
+    // Create a central widget reference state tracker
+    const widgetState = {
+        active: true,
+        widget: null,
+        timeouts: [],
+        // Add a cleanup function that can be called from anywhere
+        cleanup: function() {
+            this.active = false;
+            this.widget = null;
+            
+            try {
+                // Call command as final action
+                command();
+            } catch (e) {
+                console.log(`Notification command error during cleanup: ${e.message}`);
+            }
+        }
+    };
+    
+    // Safe timeout creator that automatically tracks IDs
+    const createSafeTimeout = (ms, callback) => {
+        if (!widgetState.active) return null;
+        
+        const timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, ms, () => {
+            if (!widgetState.active) return GLib.SOURCE_REMOVE;
+            
+            try {
+                callback();
+            } catch (e) {
+                console.log(`Error in notification timeout: ${e.message}`);
+            }
+            
+            return GLib.SOURCE_REMOVE;
+        });
+        
+        // Track timeout for cleanup
+        if (timeoutId) widgetState.timeouts.push(timeoutId);
+        
+        return timeoutId;
+    };
+    
+    // Function to remove all timeouts
+    const cleanupTimeouts = () => {
+        if (widgetState.timeouts.length > 0) {
+            widgetState.timeouts.forEach(id => {
+                try {
+                    if (id) GLib.source_remove(id);
+                } catch (e) {
+                    // Silent fail for source removal
+                }
+            });
+            widgetState.timeouts = [];
+        }
+    };
+    
     const destroyWithAnims = () => {
-        widget.sensitive = false;
-        notificationBox.setCss(middleClickClose);
-        Utils.timeout(userOptions.asyncGet().animations.durationSmall, () => {
-            if (wholeThing) wholeThing.revealChild = false;
-        }, wholeThing);
-        Utils.timeout(userOptions.asyncGet().animations.durationSmall * 2, () => {
-            command();
+        // Check if the widget is already being destroyed or has been destroyed
+        if (!widget || !wholeThing || !widgetState.active) return;
+        
+        try {
+            // Clean up any existing timeouts first
+            cleanupTimeouts();
+            
+            // Mark as being destroyed
+            if (wholeThing.attribute) {
+                wholeThing.attribute.isDestroying = true;
+            }
+            
+            // Only try to modify widgets if they're still valid
+            try {
+                if (widget && widget.get_parent()) {
+                    widget.sensitive = false;
+                }
+                
+                if (notificationBox && notificationBox.get_parent()) {
+                    notificationBox.setCss(middleClickClose);
+                }
+            } catch (e) {
+                console.log(`Error modifying widgets: ${e.message}`);
+            }
+            
+            // Schedule animation start
+            createSafeTimeout(userOptions.asyncGet().animations.durationSmall, () => {
+                if (!widgetState.active) return;
+                
+                try {
+                    // Only modify if widget is still valid
+                    if (wholeThing && 
+                        typeof wholeThing.get_parent === 'function' && 
+                        wholeThing.get_parent() !== null && 
+                        'revealChild' in wholeThing) {
+                        
+                        // Don't use property access more than once
+                        wholeThing.revealChild = false;
+                    }
+                } catch (e) {
+                    console.log(`Error in animation start: ${e.message}`);
+                    
+                    // Try immediate destruction as fallback
+                    try {
+                        widgetState.cleanup();
+                        if (wholeThing) {
+                            wholeThing.destroy();
+                            wholeThing = null;
+                        }
+                    } catch (error) {
+                        // Last resort - just null the reference
+                        wholeThing = null;
+                    }
+                    
+                    return;
+                }
+                
+                // Schedule final cleanup
+                createSafeTimeout(userOptions.asyncGet().animations.durationSmall, () => {
+                    try {
+                        // Call cleanup first to prevent any further accesses
+                        widgetState.cleanup();
+                        
+                        // Then destroy widget if it still exists
+                        if (wholeThing) {
+                            wholeThing.destroy();
+                            wholeThing = null;
+                        }
+                    } catch (e) {
+                        console.log(`Error in final cleanup: ${e.message}`);
+                        wholeThing = null;
+                    }
+                });
+            });
+        } catch (e) {
+            console.log(`Error in destroyWithAnims: ${e.message}`);
+            
+            // Last resort cleanup
+            widgetState.cleanup();
             if (wholeThing) {
-                wholeThing.destroy();
+                try {
+                    wholeThing.destroy();
+                } catch (e) {
+                    // Silent fail
+                }
                 wholeThing = null;
             }
-        }, wholeThing);
+        }
     }
     const widget = EventBox({
         onHover: (self) => {
-            self.window.set_cursor(Gdk.Cursor.new_from_name(display, 'grab'));
-            if (!wholeThing.attribute.hovered)
-                wholeThing.attribute.hovered = true;
+            try {
+                if (!self || !self.window || !wholeThing) return;
+                
+                self.window.set_cursor(Gdk.Cursor.new_from_name(display, 'grab'));
+                
+                if (wholeThing.attribute && !wholeThing.attribute.hovered) {
+                    wholeThing.attribute.hovered = true;
+                }
+            } catch (e) {
+                console.log(`Error in notification hover: ${e.message}`);
+            }
         },
         onHoverLost: (self) => {
-            self.window.set_cursor(null);
-            if (wholeThing.attribute.hovered)
-                wholeThing.attribute.hovered = false;
-            if (isPopup) {
-                command();
+            try {
+                if (!self || !self.window || !wholeThing) return;
+                
+                self.window.set_cursor(null);
+                
+                if (wholeThing.attribute && wholeThing.attribute.hovered) {
+                    wholeThing.attribute.hovered = false;
+                }
+                
+                if (isPopup && !wholeThing.attribute?.isDestroying) {
+                    command();
+                }
+            } catch (e) {
+                console.log(`Error in notification hover lost: ${e.message}`);
             }
         },
         onMiddleClick: (self) => {
@@ -250,11 +399,39 @@ export default ({
         className: 'txt-smaller txt-semibold',
         label: initTimeString,
         setup: initTimeString == 'Now' ? (self) => {
-            let id = Utils.timeout(60000, () => {
-                self.label = getFriendlyNotifTimeString(notifObject.time);
-                id = null;
-            });
-            self.connect('destroy', () => { if (id) GLib.source_remove(id) });
+            // Store timeout ID in widget attribute for proper cleanup
+            self.attribute = self.attribute || {};
+            self.attribute.timeoutId = null;
+            
+            if (initTimeString == 'Now') {
+                self.attribute.timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 60000, () => {
+                    // Safely update label if widget still exists
+                    try {
+                        if (self && !self.is_destroyed) {
+                            self.label = getFriendlyNotifTimeString(notifObject.time);
+                        }
+                    } catch (e) {
+                        console.log(`Error updating notification time: ${e.message}`);
+                    }
+                    
+                    // Remove the source
+                    self.attribute.timeoutId = null;
+                    return GLib.SOURCE_REMOVE;
+                });
+                
+                // Connect destroy signal with proper disconnect
+                self.connect('destroy', () => {
+                    try {
+                        // Clear timeout if it exists
+                        if (self.attribute?.timeoutId) {
+                            GLib.source_remove(self.attribute.timeoutId);
+                            self.attribute.timeoutId = null;
+                        }
+                    } catch (e) {
+                        // Silent fail for source removal
+                    }
+                });
+            }
         } : () => { },
     });
     const notifText = Box({
@@ -446,17 +623,155 @@ export default ({
     })
     widget.add(notificationBox);
     wholeThing.child.children = [widget];
-    if (isPopup) Utils.timeout(popupTimeout, () => {
-        if (wholeThing) {
-            wholeThing.revealChild = false;
-            Utils.timeout(userOptions.asyncGet().animations.durationSmall, () => {
-                if (wholeThing) {
-                    wholeThing.destroy();
+    
+    // Setup widget reference in state
+    widgetState.widget = wholeThing;
+    
+    // Improve widget's destroy mechanism
+    widget.connect('destroy', () => {
+        try {
+            // Clean up the gesture
+            if (gesture) {
+                // Set the state to denied to cancel any active gestures
+                gesture.set_state(Gtk.EventSequenceState.DENIED);
+                
+                // Don't try to unref in JS - this causes errors
+            }
+        } catch (e) {
+            console.log(`Error cleaning up gesture: ${e.message}`);
+        }
+    });
+
+    // Better cleanup for revealer destruction
+    wholeThing.connect('destroy', () => {
+        // Mark state as inactive
+        if (widgetState.active) {
+            widgetState.active = false;
+            widgetState.widget = null;
+            
+            // Clean up timeouts
+            cleanupTimeouts();
+            
+            // Clean up any listeners
+            try {
+                if (gesture) {
+                    // Set the state to denied to cancel any active gestures
+                    gesture.set_state(Gtk.EventSequenceState.DENIED);
+                    
+                    // Don't try to unref in JS - this causes errors
+                }
+            } catch (e) {
+                // Silent fail
+            }
+        }
+        
+        // Clear global reference
+        wholeThing = null;
+    });
+    
+    // Ensure the drag gesture is properly initialized
+    gesture.connect('cancel', () => {
+        try {
+            notificationBox.setCss(`transition: margin 200ms cubic-bezier(0.05, 0.7, 0.1, 1), opacity 200ms cubic-bezier(0.05, 0.7, 0.1, 1);
+                            margin-left:  ${startMargin}px;
+                            margin-right: ${startMargin}px;
+                            margin-bottom: unset; margin-top: unset;
+                            opacity: 1;`);
+            
+            if (widget?.window)
+                widget.window.set_cursor(Gdk.Cursor.new_from_name(display, 'grab'));
+            
+            if (wholeThing?.attribute)
+                wholeThing.attribute.dragging = false;
+                
+            initDirX = 0;
+            initDirVertical = -1;
+        } catch (e) {
+            console.log(`Error in gesture cancel: ${e.message}`);
+        }
+    });
+    
+    // Create popup timeout if needed
+    if (isPopup) {
+        createSafeTimeout(popupTimeout, () => {
+            // Skip if widget not active
+            if (!widgetState.active) return;
+            
+            // Check widget state
+            let isHovered = false;
+            let isDestroying = false;
+            
+            try {
+                if (wholeThing && wholeThing.attribute) {
+                    isHovered = !!wholeThing.attribute.hovered;
+                    isDestroying = !!wholeThing.attribute.isDestroying;
+                }
+            } catch (e) {
+                console.log(`Error checking widget state: ${e.message}`);
+                return;
+            }
+            
+            // Skip if hovered or already being destroyed
+            if (isHovered || isDestroying) return;
+            
+            // Start hiding animation
+            try {
+                // Safe property access with existence checks
+                if (wholeThing && 
+                    typeof wholeThing.get_parent === 'function' && 
+                    wholeThing.get_parent() !== null &&
+                    'revealChild' in wholeThing) {
+                    
+                    // Set only once
+                    wholeThing.revealChild = false;
+                    
+                    // Schedule final cleanup
+                    createSafeTimeout(userOptions.asyncGet().animations.durationSmall, () => {
+                        if (!widgetState.active) return;
+                        
+                        try {
+                            // Mark as destroying
+                            if (wholeThing && wholeThing.attribute) {
+                                wholeThing.attribute.isDestroying = true;
+                            }
+                        } catch (e) {
+                            // Ignore
+                        }
+                        
+                        // Call cleanup functions
+                        widgetState.cleanup();
+                        
+                        // Final destroy if needed
+                        try {
+                            if (wholeThing) {
+                                wholeThing.destroy();
+                                wholeThing = null;
+                            }
+                        } catch (e) {
+                            console.log(`Error in final popup destroy: ${e.message}`);
+                            wholeThing = null;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.log(`Error starting hide animation: ${e.message}`);
+                
+                // Fallback cleanup
+                widgetState.cleanup();
+                
+                // Try to destroy widget
+                try {
+                    if (wholeThing) {
+                        wholeThing.destroy();
+                        wholeThing = null;
+                    }
+                } catch (e) {
+                    // Silent fail
                     wholeThing = null;
                 }
-                command();
-            }, wholeThing);
-        }
-    })
+            }
+        });
+    }
+    
     return wholeThing;
 }

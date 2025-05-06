@@ -38,7 +38,7 @@ const Edit = () => Widget.Button({
     label: "edit",
   }),
   onClicked: () => {
-    Utils.execAsync([`nvim ~/.ags/config.json`]).catch(print);
+    Utils.execAsync([`nvim ~/.ags/config.jsonc`]).catch(print);
   },
   setup:setupCursorHover
 });

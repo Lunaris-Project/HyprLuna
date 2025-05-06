@@ -22,8 +22,11 @@ export const ConfigToggle = ({
                 self.toggleClassName('txt-poof', true);
             }
             else Utils.timeout(1, () => {
-                toggleIcon.label = 'check';
-                toggleIcon.toggleClassName('txt-poof', false);
+                // Check if the widget still exists before updating it
+                if (toggleIcon && !toggleIcon.is_destroyed) {
+                    toggleIcon.label = 'check';
+                    toggleIcon.toggleClassName('txt-poof', false);
+                }
             })
         }),
     })

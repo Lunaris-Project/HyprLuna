@@ -10,13 +10,13 @@ try {
     const defaultConfig = Utils.readFile(defaultConfigPath);
     configOptions = JSON.parse(defaultConfig);
 } catch (e) {
-    console.error('Error loading user_options.default.json:', e);
+    console.error('Error loading user_options.default.jsonc:', e);
 }
 
 let optionsOkay = true;
 function overrideConfigRecursive(userOverrides, configOptions = {}, check = true) {
     for (const [key, value] of Object.entries(userOverrides)) {
-        if (key === '__custom' || (configOptions['__custom'] instanceof Array && 
+        if (key === '__custom' || (configOptions['__custom'] instanceof Array &&
             configOptions['__custom'].indexOf(key) >= 0)) {
             configOptions[key] = value;
             continue;
@@ -47,11 +47,38 @@ async function config_error_parse(e) {
     });
 }
 
+// Function to check for both .json and .jsonc files
+const findConfigFile = (basePath) => {
+    const jsonPath = `${basePath}.json`;
+    const jsoncPath = `${basePath}.jsonc`;
+
+    if (fileExists(jsonPath)) {
+        return jsonPath;
+    } else if (fileExists(jsoncPath)) {
+        return jsoncPath;
+    }
+
+    return null;
+};
+
 const update = (file) => {
-    if (fileExists(file)) {
+    // If file is a path without extension, try to find the correct file
+    let configFile = file;
+    if (typeof file === 'string' && !file.endsWith('.json') && !file.endsWith('.jsonc')) {
+        configFile = findConfigFile(file);
+        if (!configFile) {
+            Utils.notify({
+                summary: 'Config file not found',
+                body: `Could not find ${file}.json or ${file}.jsonc`
+            });
+            return false;
+        }
+    }
+
+    if (fileExists(configFile)) {
         try {
             optionsOkay = true; // Reset the flag at the start of each update
-            const userOverrides = Utils.readFile(file);
+            const userOverrides = Utils.readFile(configFile);
             const copy_configOptions = clone(configOptions);
             overrideConfigRecursive(JSON.parse(userOverrides), copy_configOptions);
             if (!optionsOkay) {
@@ -73,9 +100,25 @@ const update = (file) => {
     return false;
 };
 
-update(USER_CONFIG_FOLDER + 'config.json');
+// Try to find the config file (either .json or .jsonc)
+const configBasePath = USER_CONFIG_FOLDER + 'config';
+const configFile = findConfigFile(configBasePath) || USER_CONFIG_FOLDER + 'config.json';
 
-const monitor = Utils.monitorFile(USER_CONFIG_FOLDER + 'config.json', (file, event) => {
+// Load the config file
+update(configFile);
+
+// Monitor both possible config files for changes
+const monitorJson = Utils.monitorFile(USER_CONFIG_FOLDER + 'config.json', (file, event) => {
+    if (event === 1) { // GFileMonitorEvent.CHANGED
+        const success = update(file.get_path());
+        if (success) {
+            // Restart AGS on successful config update
+            Utils.execAsync(['bash','-c',`${App.configDir}/scripts/restart_ags.sh`]).catch(print);
+        }
+    }
+});
+
+const monitorJsonc = Utils.monitorFile(USER_CONFIG_FOLDER + 'config.jsonc', (file, event) => {
     if (event === 1) { // GFileMonitorEvent.CHANGED
         const success = update(file.get_path());
         if (success) {

@@ -41,6 +41,22 @@
     background: linear-gradient(to right, $primary 0%, $surface 100%);
 }
 
+// Container for each resource to ensure consistent sizing and alignment
+.auva-resource-container {
+    min-height: 4.7rem; // Match the height of the circular progress
+    min-width: 4.7rem; // Match the width of the circular progress
+}
+
+// Center the icon in the circular progress - match system resources widget
+.auva-circprog-main + .icon-material {
+    margin: 0;
+    padding: 0;
+    font-size: 1.8182rem; // txt-hugeass size
+    // Position adjustments for perfect centering
+    margin-top: 0px;
+    margin-left: 0px;
+}
+
 .auva-clock-box {
     @include full-rounding;
     padding: 0.2rem 1.5rem;

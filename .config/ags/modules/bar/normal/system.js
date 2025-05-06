@@ -17,12 +17,12 @@ const BarBatteryProgress = () => {
     const _updateProgress = (circprog) => {
         const percent = Battery.percent;
         const key = `${percent}-${Battery.charged}`;
-        
+
         if (!batteryProgressCache.has(key)) {
             const css = `font-size: ${Math.abs(percent)}px;`;
             batteryProgressCache.set(key, css);
         }
-        
+
         circprog.css = batteryProgressCache.get(key);
         circprog.toggleClassName('bar-batt-circprog-low', percent <= options.battery.low);
         circprog.toggleClassName('bar-batt-circprog-full', Battery.charged);
@@ -30,7 +30,7 @@ const BarBatteryProgress = () => {
 
     return AnimatedCircProg({
         className: 'bar-batt-circprog',
-        vpack: 'center', 
+        vpack: 'center',
         hpack: 'center',
         extraSetup: (self) => self.hook(Battery, _updateProgress),
     })
@@ -93,8 +93,8 @@ const Utilities = () => {
         className: 'spacing-h-4',
         children: [
             UtilButton({
-                name: getString('Change wallpaper'), 
-                icon: 'image', 
+                name: getString('Change wallpaper'),
+                icon: 'image',
                 onClicked: () => App.toggleWindow('wallselect'),
             }),
             UtilButton({
@@ -169,24 +169,11 @@ const BatteryModule = () => Box({
         ...(userOptions.asyncGet().bar.elements.showUtils ? [BarGroup({ child: Utilities() })] : []),
         scrolledmodule({
             children:[
-                Stack({
-                    transitionDuration: userOptions.asyncGet().animations.durationLarge,
-                    transition: 'slide_up_down',
-                    children: {
-                        'hidden': Widget.Box({}),
-                        'laptop': Widget.Box({children:[...(userOptions.asyncGet().bar.elements.showBattery ? [Widget.Box({ vexpand: true, children:[ BarGroup({ child: BarBattery() })] })] : [])]}),
-                    },
-                    setup: (stack) => {
-                        stack.hook(globalThis.devMode, () => {
-                            if (globalThis.devMode.value) {
-                                stack.shown = 'laptop';
-                            } else {
-                                if (!Battery.available) stack.shown = 'hidden';
-                                else stack.shown = 'laptop';
-                            }
-                        });
-                    }
-                }),
+                // Only show battery if available and enabled in settings
+                ...(Battery?.available && userOptions.asyncGet().bar.elements.showBattery ?
+                    [Widget.Box({ vexpand: true, children:[ BarGroup({ child: BarBattery() })] })] :
+                    [Widget.Box({})]
+                ),
                 BatteryScaleModule(),
             ]
         })

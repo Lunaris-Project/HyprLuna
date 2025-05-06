@@ -6,6 +6,7 @@ const { execAsync } = Utils;
 import Indicator from "../../../services/indicator.js";
 import { StatusIcons } from "../../.commonwidgets/statusicons.js";
 import { Tray } from "../modules/tray.js";
+import KbLayout from "../modules/kb_layout.js";
 
 // Volume constants
 const VOLUME_STEP = 0.02;
@@ -71,6 +72,14 @@ export default (monitor = 0) => {
     Indicator.popup(1);
   };
 
+  // Get user options for showing tray and keyboard layout
+  const opts = userOptions.asyncGet();
+  const showTray = opts.bar.elements.showTray !== false;
+  const showKbdLayout = opts.bar.elements.showKbdLayout !== false;
+
+  // Create keyboard layout widget if enabled
+  const kbdLayoutWidget = showKbdLayout ? KbLayout() : null;
+
   return Widget.EventBox({
     onScrollUp: () => handleScroll(1),
     onScrollDown: () => handleScroll(-1),
@@ -79,7 +88,12 @@ export default (monitor = 0) => {
         Widget.Box({
           hexpand: true,
           className: "spacing-h-5 bar-spaceright",
-          children: [emptyArea, barTray, indicatorArea,],
+          children: [
+            emptyArea,
+            ...(showKbdLayout ? [kbdLayoutWidget] : []),
+            ...(showTray ? [barTray] : []),
+            indicatorArea,
+          ],
         }),
       ],
     }),

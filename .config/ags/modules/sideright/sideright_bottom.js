@@ -124,21 +124,30 @@ export const sidebarOptionsStack = ExpandingIconTabContainer({
         if (getEnabledModules()[id].onFocus) getEnabledModules()[id].onFocus();
     }
 });
-const images = [
-    // '1',
-    // '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    // '7',
-    // '8',
-    // '9',
-    // '10'
-];
+const iconPath = '~/.config/ags/assets/avatars';
 
-const randomIndex = Math.floor(Math.random() * images.length);
-export const selectedImage = images[randomIndex];
+function getIconFiles() {
+  try {
+    const files = Utils.exec(`ls ${iconPath}`)
+      .split('\n')
+      .filter(file => 
+        file.endsWith('.png') || 
+        file.endsWith('.svg') || 
+        file.endsWith('.jpg')
+      )
+      .map(file => file.replace(/\.(png|svg|jpg)$/, ''));
+    
+    return files.length > 0 ? files : ['1', '2', '3', '4'];
+  } catch (error) {
+    return ['1', '2', '3', '4'];
+  }
+}
+
+const icons = getIconFiles();
+const randomIndex = Math.floor(Math.random() * icons.length);
+const selectedImage = icons[randomIndex];
+
+export { selectedImage };
 
 const Cat = Widget.Button({
     onClicked: () => {

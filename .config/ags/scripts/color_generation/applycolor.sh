@@ -16,10 +16,10 @@ mapfile -t lines < "$COLORMODE_FILE"
 # Transparency setup
 if [[ "${lines[1]}" == *"transparent"* ]]; then
     ags_transparency=True
-    hypr_opacity=0.8
+    hypr_opacity=0.9
     rofi_alpha="#00000090"
     rofi_alpha_element="#00000025"
-    term_alpha=0.8
+    term_alpha=0.9
     if [[ "${lines[6]}" == *"intense"* ]]; then 
         transProfile=Intense 
     else 
@@ -71,7 +71,7 @@ fi
 transparency() {
     # Hyprland Transparency
     local hypr_config="$XDG_CONFIG_HOME/hypr/hyprland/rules/default.conf"
-    local hypr_line="windowrule = opacity $hypr_opacity override, .*"
+    local hypr_line="windowrule = opacity $hypr_opacity override, class:.*"
     if [[ $(sed -n '1p' "$hypr_config") != "$hypr_line" ]]; then
         sed -i "1s/.*/$hypr_line/" "$hypr_config"
     fi

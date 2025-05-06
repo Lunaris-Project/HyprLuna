@@ -3,7 +3,7 @@ import App from 'resource:///com/github/Aylur/ags/app.js';
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 const { Box, Button, EventBox, Label, Revealer, Scrollable, Stack } = Widget;
-const { execAsync, exec } = Utils;
+const { execAsync, exec, timeout } = Utils;
 import { MaterialIcon } from '../.commonwidgets/materialicon.js';
 import { setupCursorHover } from '../.widgetutils/cursorhover.js';
 import toolBox from './toolbox.js';
@@ -13,7 +13,7 @@ import { TabContainer } from '../.commonwidgets/tabcontainer.js';
 import { checkKeybind } from '../.widgetutils/keybind.js';
 import { writable } from '../../modules/.miscutils/store.js';
 import { RoundedCorner } from '../.commonwidgets/cairo_roundedcorner.js';
-const elevate = userOptions.asyncGet().etc.widgetCorners ? "sidebar-left"  : "sidebar-left elevation shadow-window" ;
+const elevate = userOptions.asyncGet().etc.widgetCorners ? "sidebar-left-bg sidebar-left-rounded"  : "sidebar-left-bg elevation" ;
 import githubWidget from './github.js';
 const SIDEBARTABS = {
     'apis': {
@@ -42,7 +42,8 @@ userOptions.subscribe(n => {
 
 const pinButton = Button({
     attribute: {
-        'enabled': false,
+        // Initialize enabled state from user options
+        'enabled': userOptions.asyncGet().etc.sideLeftPin || false,
         'toggle': (self) => {
             self.attribute.enabled = !self.attribute.enabled;
             self.toggleClassName('sidebar-pin-enabled', self.attribute.enabled);
@@ -52,8 +53,19 @@ const pinButton = Button({
 
             const sideleftContent = sideleftWindow.get_children()[0];
             if (!sideleftContent) return;
+
+            // Toggle the pinned class on the content
             sideleftContent.toggleClassName('sidebar-pinned', self.attribute.enabled);
+
+            // Set the window exclusivity based on pin state
             sideleftWindow.exclusivity = self.attribute.enabled ? 'exclusive' : 'normal';
+
+            // Force a refresh of the window to update the close region visibility
+            const currentlyVisible = sideleftWindow.visible;
+            if (currentlyVisible) {
+                App.closeWindow('sideleft');
+                timeout(50, () => App.openWindow('sideleft'));
+            }
         },
     },
     vpack: 'start',
@@ -63,6 +75,9 @@ const pinButton = Button({
     onClicked: (self) => self.attribute.toggle(self),
     setup: (self) => {
         setupCursorHover(self);
+        // Initialize the pin button state
+        self.toggleClassName('sidebar-pin-enabled', self.attribute.enabled);
+
         self.hook(App, (self, currentName, visible) => {
             if (currentName === 'sideleft' && visible) self.grab_focus();
         });
@@ -94,9 +109,9 @@ export default () => {
             userOptions.asyncGet().etc.widgetCorners ? Box({
                 vertical:true,
                 children:[
-                    RoundedCorner('topleft', {className: 'corner'}),         
+                    RoundedCorner('topleft', {className: 'corner corner-colorscheme'}),
                     Box({vexpand:true}),
-                    RoundedCorner('bottomleft', {className: 'corner'}),
+                    RoundedCorner('bottomleft', {className: 'corner corner-colorscheme'}),
                 ]
             }):null
         ],
@@ -128,12 +143,18 @@ export default () => {
                     }
                     // Switch API type
                     else if (checkKeybind(event, userOptions.asyncGet().keybinds.sidebar.apis.nextTab)) {
-                        const toSwitchTab = widgetContent.attribute.children[widgetContent.attribute.shown.value];
-                        toSwitchTab.nextTab();
+                        const apiWidget = widgetContent.attribute.children[widgetContent.attribute.shown.value];
+                        // Use the attribute methods defined in apiwidgets.js
+                        if (apiWidget && apiWidget.attribute && typeof apiWidget.attribute.nextTab === 'function') {
+                            apiWidget.attribute.nextTab();
+                        }
                     }
                     else if (checkKeybind(event, userOptions.asyncGet().keybinds.sidebar.apis.prevTab)) {
-                        const toSwitchTab = widgetContent.attribute.children[widgetContent.attribute.shown.value];
-                        toSwitchTab.prevTab();
+                        const apiWidget = widgetContent.attribute.children[widgetContent.attribute.shown.value];
+                        // Use the attribute methods defined in apiwidgets.js
+                        if (apiWidget && apiWidget.attribute && typeof apiWidget.attribute.prevTab === 'function') {
+                            apiWidget.attribute.prevTab();
+                        }
                     }
                 }
 

@@ -7,6 +7,7 @@ import { SideModule } from "./../../.commonwidgets/sidemodule.js";
 import NormalOptionalWorkspaces  from "../normal/workspaces_hyprland.js";
 import ScrolledModule from "../../.commonwidgets/scrolledmodule.js";
 import PinnedApps from "../modules/pinned_apps.js";
+import kb_layout from "../modules/kb_layout.js";
 import { BarGroup } from "../../.commonwidgets/bargroup.js";
 const opts = userOptions.asyncGet();
   const workspaces = opts.bar.elements.showWorkspaces;

@@ -9,6 +9,7 @@ import KbLayout from "../modules/kb_layout.js";
 import VerticalOptionalWorkspace from "../vertical_modules/workspaces_hyprland.js"
 import ScrolledModule from "../../.commonwidgets/scrolledmodule.js";
 import { MediaControls } from "../vertical_modules/bar_toggles.js";
+import { VolumeControl } from "../vertical_modules/empty_area.js";
 export const VerticalBarPinned = Widget.CenterBox({
   className: "bar-bg",
   css: `min-width:3rem`,
@@ -48,6 +49,7 @@ export const VerticalBarPinned = Widget.CenterBox({
       vexpand: true,
       spacing: 15,
       children: [
+        VolumeControl(),
         StatusIcons(),
         KbLayout(),
         VerticalClock(),

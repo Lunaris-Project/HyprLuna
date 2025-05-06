@@ -102,7 +102,9 @@ const ResourceValue = (
 ) =>
   Box({
     ...props,
-    className: "bg-system-bg txt",
+    className: "bg-system-bg txt auva-resource-container",
+    vpack: "center", // Ensure vertical centering
+    hpack: "center", // Ensure horizontal centering
     children: [
       Overlay({
         child: AnimatedCircProg({
@@ -116,7 +118,13 @@ const ResourceValue = (
                 .catch(print);
             }),
         }),
-        overlays: [MaterialIcon(`${icon}`, "hugeass")],
+        overlays: [
+          // Use the same approach as in system.js with exact same parameters
+          MaterialIcon(`${icon}`, "hugeass")
+        ],
+        // Ensure the overlay is centered
+        hpack: "center",
+        vpack: "center",
         setup: (self) =>
           self.set_overlay_pass_through(self.get_children()[1], true),
       }),
@@ -124,7 +132,9 @@ const ResourceValue = (
   });
 const resources = Box({
   spacing: 15,
-  className: "spacing-v-15",
+  className: "spacing-h-15", // Changed from spacing-v-15 to spacing-h-15 for horizontal layout
+  // vertical: false, // Ensure horizontal layout
+  // hpack: "center", // Center the resources horizontally
   children: [
     ResourceValue(
       "Memory",
@@ -142,7 +152,7 @@ const resources = Box({
           })
           .catch(print);
       },
-      { hpack: "end" }
+      { hpack: "center", vpack: "center" }
     ),
     ResourceValue(
       "Swap",
@@ -160,7 +170,7 @@ const resources = Box({
           })
           .catch(print);
       },
-      { hpack: "end" }
+      { hpack: "center", vpack: "center" }
     ),
     ResourceValue(
       "Disk space",
@@ -178,7 +188,7 @@ const resources = Box({
           })
           .catch(print);
       },
-      { hpack: "end" }
+      { hpack: "center", vpack: "center" }
     ),
   ],
 });
@@ -188,7 +198,7 @@ export default () =>
     hpack: "start",
     vpack: "end",
     vertical: true,
-    css: `margin:0 0 5rem 8rem`,
+    css: `margin:0 0 2.5rem 3rem`,
     spacing: 35,
     children: [Time(), resources],
   });

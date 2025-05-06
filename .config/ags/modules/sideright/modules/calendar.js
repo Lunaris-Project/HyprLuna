@@ -9,12 +9,10 @@ import { TodoWidget } from "./todolist.js";
 import { getCalendarLayout } from "./calendar_layout.js";
 import AudioFiles from "./media.js";
 import { PrayerTimesWidget } from "../prayertimes.js";
-// Кэшируем часто используемые значения
 let calendarJson = getCalendarLayout(undefined, true);
 let monthshift = 0;
 let userOpts = userOptions.asyncGet();
 
-// Оптимизированная функция получения даты
 function getDateInXMonthsTime(x) {
   const currentDate = new Date();
   let targetMonth = currentDate.getMonth() + x;
@@ -39,7 +37,6 @@ const weekDays = (() => {
   ];
 })();
 
-// Оптимизированный компонент дня календаря
 const CalendarDay = (day, today) =>
   Widget.Button({
     className: `sidebar-calendar-btn ${today == 1 ? "sidebar-calendar-btn-today" : today == -1 ? "sidebar-calendar-btn-othermonth" : ""}`,
@@ -162,7 +159,17 @@ const CalendarWidget = () => {
   });
 };
 
-const defaultShown = userOpts.muslim?.enabled ? "PrayerTimes" : "calendar";
+// Define valid options for the default shown module
+const validOptions = ["calendar", "todo", "media", "timers"];
+if (userOpts.muslim?.enabled) {
+  validOptions.push("PrayerTimes");
+}
+
+// Get the default shown module from config or fallback to "calendar"
+let configDefault = userOpts.sidebar?.ModuleCalendar?.default || "calendar";
+// Validate that the default is one of the valid options
+const defaultShown = validOptions.includes(configDefault) ? configDefault : "calendar";
+
 const contentStack = Widget.Stack({
   hexpand: true,
   vexpand: false,
@@ -173,6 +180,10 @@ const contentStack = Widget.Stack({
     todo: TodoWidget(),
     media: AudioFiles(),
     timers: TimerWidget(),
+  },
+  setup: (self) => {
+    // Set the default shown to the validated default value
+    self.shown = defaultShown;
   },
   transition: "slide_up_down",
   transitionDuration: userOpts.animations.durationLarge,
@@ -226,7 +237,7 @@ const StackButton = (stackItemName, icon, name) =>
 export const ModuleCalendar = () =>
   Box({
     hexpand: true,
-    className: "sidebar-group spacing-h-5",
+    className: "sidebar-group spacing-h-10",
     setup: (box) => {
       box.pack_start(
         Box({

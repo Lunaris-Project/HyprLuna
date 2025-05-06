@@ -29,16 +29,18 @@ import VPN from "./centermodules/vpn.js";
 import taskmanager from "./centermodules/taskmanager.js";
 import Gio from "gi://Gio";
 const config = userOptions.asyncGet();
-const elevate = userOptions.asyncGet().etc.widgetCorners
-  ? "sidebar-right"
-  : "sidebar-right shadow-window elevation";
-export const calendarRevealer = Widget.Revealer({
-  revealChild: userOptions.asyncGet().sidebar.ModuleCalendar.visible
-    ? true
-    : false,
-  child: ModuleCalendar(),
-  transition: "slide_up",
-});
+const elevate = userOptions.asyncGet().etc.widgetCorners ? "sidebar-right-bg sidebar-right-rounded"  : "sidebar-right-bg elevation" ;
+
+  export const calendarRevealer = Widget.Revealer({
+    revealChild: userOptions.asyncGet().sidebar.ModuleCalendar.visible
+      ? true
+      : false,
+    child: Widget.Box({
+      vertical: true,
+      children: [Widget.Box({ css: "margin-top: 10px;" }), ModuleCalendar()],
+    }),
+    transition: "slide_up",
+  });
 const modulesList = {
   vpnGate: {
     name: "VPN Gate",
@@ -198,36 +200,56 @@ export const sidebarOptionsStack = ExpandingIconTabContainer({
     if (getEnabledModules()[id].onFocus) getEnabledModules()[id].onFocus();
   },
 });
+
 const getRandomImage = () => {
   try {
-    const animeDir = `${GLib.get_home_dir()}/.config/ags/assets/anime`;
-    const dir = Gio.File.new_for_path(animeDir);
+      const animeDir = `${GLib.get_home_dir()}/.config/ags/assets/anime`;
+      const dir = Gio.File.new_for_path(animeDir);
 
-    // List files in directory
-    const enumerator = dir.enumerate_children(
-      "standard::name,standard::type",
-      Gio.FileQueryInfoFlags.NONE,
-      null
-    );
-    const imageFiles = [];
-
-    let fileInfo;
-    while ((fileInfo = enumerator.next_file(null)) !== null) {
-      const name = fileInfo.get_name();
-      // Only add files with image extensions
-      if (name.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        imageFiles.push(name.replace(/\.[^/.]+$/, "")); // Remove extension
+      // Check if directory exists
+      if (!dir.query_exists(null)) {
+          console.error(`Directory does not exist: ${animeDir}`);
+          return "hyprluna";
       }
-    }
 
-    if (imageFiles.length === 0) return "1"; // fallback if no images
+      const enumerator = dir.enumerate_children(
+          "standard::name,standard::type",
+          Gio.FileQueryInfoFlags.NONE,
+          null
+      );
 
-    // Get random image name
-    const randomIndex = Math.floor(Math.random() * imageFiles.length);
-    return imageFiles[randomIndex];
+      const imageFiles = [];
+      let fileInfo;
+
+      while ((fileInfo = enumerator.next_file(null)) !== null) {
+          const name = fileInfo.get_name();
+          // More comprehensive image extension check
+          if (name.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i)) {
+              // Create full path to the image file
+              const fullPath = `${animeDir}/${name}`;
+              // Check if the file exists and is readable
+              const file = Gio.File.new_for_path(fullPath);
+              if (file.query_exists(null)) {
+                  imageFiles.push(fullPath);
+              }
+          }
+      }
+
+      enumerator.close(null);
+
+      console.debug(`Found ${imageFiles.length} images`);
+      if (imageFiles.length === 0) {
+          console.error("No images found in directory");
+          return "hyprluna";
+      }
+
+      const randomIndex = Math.floor(Math.random() * imageFiles.length);
+      const selected = imageFiles[randomIndex];
+      console.debug(`Selected image: ${selected}`);
+      return selected;
   } catch (error) {
-    console.error("Error getting random image:", error);
-    return "1"; // fallback to default
+      console.error("Error getting random image:", error.message);
+      return "hyprluna";
   }
 };
 
@@ -271,7 +293,7 @@ let content = Box({
       overlays: [topArea],
     }),
     Box({
-      className: "sidebar-group",
+      className: "sidebar-group spacing-v-10",
       vexpand: true,
       children: [sidebarOptionsStack],
     }),

@@ -80,7 +80,7 @@ const TransparencyToggle = () => {
             Utils.execAsync([`bash`, `-c`,
                 `mkdir -p ${GLib.get_user_state_dir()}/ags/user && ` +
                 `sed -i "2s/.*/${newValue}/" ${LIGHTDARK_FILE} && ` +
-                `${App.configDir}/scripts/color_generation/applycolor.sh`
+                `go run ${App.configDir}/scripts/color_generation/applycolor.go`
             ]).catch(print);
         },
         setup: (self) => {

@@ -18,14 +18,16 @@ export default ({
 
         child: Box({
             setup: (self) => {
-                self.keybind("Escape", () => closeEverything());
+                self.keybind("Escape", () => {
+                    // Close this specific window instead of all windows
+                    App.closeWindow(name);
+                });
                 if (showClassName != "" && hideClassName !== "") {
                     self.hook(App, (self, currentName, visible) => {
                         if (currentName === name) {
                             self.toggleClassName(hideClassName, !visible);
                         }
                     });
-
                     if (showClassName !== "" && hideClassName !== "")
                         self.className = `${showClassName} ${hideClassName}`;
                 }

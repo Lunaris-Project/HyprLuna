@@ -100,7 +100,14 @@ export const AnoonBar = Widget.CenterBox({
                   css:`min-width:30rem`,
                   className: "bar-knocks",
                   spacing: 5,
-                  children: [simpleClock(),StatusIcons({className:"onSurfaceVariant"}),kb_layout(),BarResources(),battery()],
+                  children: [
+                    simpleClock(),
+                    StatusIcons({className:"onSurfaceVariant"}),
+                    kb_layout(),
+                    BarResources(),
+
+                    battery()
+                  ],
                 }),
               ],
             }),

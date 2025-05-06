@@ -1,0 +1,111 @@
+# Multi-Monitor Support Plan for AGS
+
+## Current Issues
+1. Excessive logging when connecting multiple monitors
+2. Performance degradation when connecting a second monitor
+3. Widget reuse issues causing GTK warnings
+4. Inefficient creation of components for all monitors regardless of configuration
+5. Inconsistent bar mode switching between monitors
+
+## Core Components to Modify
+
+### 1. Monitor Detection and Management
+- File: modules/.commondata/monitordetection.js
+  - Optimize monitor detection logic
+  - Reduce unnecessary logging
+  - Improve primary monitor detection
+  - Avoid unnecessary AGS restarts
+
+### 2. Widget Creation for Multiple Monitors
+- File: config.js
+  - Optimize forMonitors() function to only create widgets for specified monitors
+  - Avoid creating widgets for all monitors when only one is targeted
+
+### 3. Bar Component Management
+- File: modules/bar/main.js
+  - Fix widget reuse issues
+  - Implement proper cleanup of old widgets
+  - Use factory pattern for component creation
+
+### 4. Bar Mode and Position Management
+- File: variables.js
+  - Optimize mode switching logic
+  - Reduce unnecessary updates and logging
+  - Improve monitor-specific mode handling
+
+### 5. Configuration System
+- File: modules/.configuration/user_options.js
+  - Add more granular monitor-specific settings
+  - Improve monitor configuration options
+
+## Implementation Plan
+
+1. Reduce Logging and Improve Monitor Detection
+   - Remove excessive logging in monitordetection.js
+   - Optimize primary monitor detection logic
+   - Add caching for monitor information
+
+2. Optimize Widget Creation
+   - Modify forMonitors() to respect monitorMode setting
+   - Only create widgets for the target monitor when specified
+   - Implement proper widget cleanup and disposal
+
+3. Fix Widget Reuse Issues
+   - Implement proper widget destruction before recreation
+   - Use factory pattern for component creation
+   - Fix corner widget issues
+
+4. Improve Bar Mode Management
+   - Optimize mode switching to be monitor-specific
+   - Reduce unnecessary updates when switching modes
+   - Fix position toggling for specific monitors
+
+5. Enhance Configuration Options
+   - Add monitor-specific settings in user_options.default.json
+   - Implement monitor-specific bar modes
+   - Add monitor name selection instead of just "primary"
+
+## Performance Optimizations
+
+1. Caching
+   - Cache monitor information to reduce detection overhead
+   - Cache bar components to avoid recreation
+   - Implement proper cache invalidation
+
+2. Lazy Loading
+   - Only load components for active monitors
+   - Defer loading of non-essential components
+
+3. Event Debouncing
+   - Debounce monitor change events
+   - Reduce frequency of updates on monitor changes
+
+4. Widget Pooling
+   - Implement widget pooling for frequently used components
+   - Reuse widgets when possible instead of creating new ones
+
+## Testing Strategy
+
+1. Test with different monitor configurations:
+   - Single monitor
+   - Dual monitors with different resolutions
+   - Triple monitors with mixed scaling
+   - Connecting/disconnecting monitors at runtime
+
+2. Performance testing:
+   - Measure startup time with different monitor configurations
+   - Monitor memory usage with multiple monitors
+   - Test responsiveness when switching modes
+
+3. Compatibility testing:
+   - Test with different Hyprland versions
+   - Test with different GTK themes
+   - Test with different scaling factors
+
+## Implementation Priorities
+
+1. Fix widget reuse issues causing GTK warnings
+2. Optimize forMonitors() to respect monitorMode
+3. Reduce excessive logging
+4. Implement proper caching
+5. Enhance configuration options

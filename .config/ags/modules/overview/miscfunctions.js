@@ -10,7 +10,20 @@ import userOptions from '../.configuration/user_options.js';
 import { currentShellMode, updateMonitorShellMode } from '../../variables.js';
 
 export const hasUnterminatedBackslash = str => /\\+$/.test(str);
-const jsonPath = GLib.get_home_dir() + '/.ags/config.json';
+// Check for both .json and .jsonc files
+const configBasePath = GLib.get_home_dir() + '/.ags/config';
+const jsonPath = (() => {
+    const jsonFile = configBasePath + '.json';
+    const jsoncFile = configBasePath + '.jsonc';
+
+    // Use GLib.file_test to check if files exist
+    const jsonExists = GLib.file_test(jsonFile, GLib.FileTest.EXISTS);
+    const jsoncExists = GLib.file_test(jsoncFile, GLib.FileTest.EXISTS);
+
+    return jsonExists ? jsonFile :
+           jsoncExists ? jsoncFile :
+           configBasePath + '.json';
+})();
 const logo = App.configDir + "/assets/icons/logo-symbolic.svg"
 export function launchCustomCommand(command) {
     const [cmd, ...args] = command.toLowerCase().split(' ');
@@ -70,7 +83,8 @@ export function launchCustomCommand(command) {
 
             try {
                 // Update user_options.default.json
-                const defaultConfigPath = GLib.get_home_dir() + '/.ags/config.json';
+                // Use the same configBasePath defined above
+                const defaultConfigPath = jsonPath;
                 let defaultConfig = JSON.parse(Utils.readFile(defaultConfigPath));
 
                 // Ensure the path exists
@@ -120,7 +134,7 @@ export function launchCustomCommand(command) {
             // Kill any running instance of VLC
             execAsync(['bash', '-c', 'pkill vlc']).catch(print);
             // Build the VLC command with the entire playlist in order
-            
+
             const vlcCommand = [
                 'bash',
                 '-c',
@@ -172,7 +186,7 @@ if results:
             const musicDir = GLib.get_home_dir() + '/Music';
             execAsync(['pkill', 'mpv']).catch(print);
             execAsync(['notify-send', `Downloading "${title}"`,  '-i', `${logo}`, 'Starting download...']).catch(print);
-            execAsync(['yt-dlp', 
+            execAsync(['yt-dlp',
                 '--extract-audio',
                 '--audio-format', 'mp3',
                 '--audio-quality', '0',
@@ -203,8 +217,8 @@ if results:
         const playlist = urls.trim().split('\n');
         if (playlist.length > 0) {
             const socketPath = '/tmp/mpvsocket';
-            execAsync(['mpv', 
-                '--no-video', 
+            execAsync(['mpv',
+                '--no-video',
                 '--loop-playlist',
                 '--input-ipc-server=' + socketPath,
                 '--script=' + App.configDir + '/scripts/mpv-notify.lua',
@@ -293,7 +307,7 @@ if results:
                 const config = JSON.parse(Utils.readFile(jsonPath));
                 if (!config.dock) config.dock = {};
                 if (!config.dock.pinnedApps) config.dock.pinnedApps = [];
-                
+
                 if (!config.dock.pinnedApps.includes(appName)) {
                     config.dock.pinnedApps.push(appName);
                     Utils.writeFile(JSON.stringify(config, null, 2), jsonPath);
@@ -312,7 +326,7 @@ if results:
             if (!args[0]) return;
             const appName = args.join(' ').toLowerCase();
             const configPath = `${App.configDir}/modules/.configuration/user_options.default.json`;
-            
+
             try {
                 const config = JSON.parse(Utils.readFile(configPath));
                 if (config.dock?.pinnedApps) {

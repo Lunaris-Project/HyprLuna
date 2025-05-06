@@ -48,12 +48,57 @@
     background-color: $secondaryContainer;
     color: $onSecondaryContainer;
     margin-right: 0.5rem;
-    
+
     &:hover {
         background-color: mix($secondaryContainer, $onSecondaryContainer, 90%);
     }
-    
+
     &:active {
         background-color: mix($secondaryContainer, $onSecondaryContainer, 80%);
     }
+}
+
+// Pagination styles
+.material-pagination-container {
+    margin: 8px 0;
+    padding: 4px 8px;
+    border-radius: $rounding_medium;
+    background-color: transparentize($surfaceContainerLow, 0.2);
+    box-shadow: 0 1px 3px transparentize($shadow, 0.8);
+}
+
+.wallpaper-pagination-btn {
+    padding: 4px;
+    border-radius: 50%;
+    background-color: transparentize($surfaceContainerLowest, 0.3);
+    color: $onSurface;
+    margin: 0 2px;
+    min-width: 32px;
+    min-height: 32px;
+    transition: background-color 200ms ease, box-shadow 200ms ease;
+
+    // Make the icon larger
+    label {
+        font-size: 18px;
+    }
+
+    &:hover {
+        background-color: mix($surfaceContainerHigh, $primary, 85%);
+        box-shadow: 0 1px 2px transparentize($shadow, 0.8);
+    }
+
+    &:active {
+        background-color: mix($primaryContainer, $primary, 90%);
+        color: $onPrimaryContainer;
+    }
+}
+
+.wallpaper-pagination-counter {
+    font-size: 1rem;
+    font-weight: 500;
+    color: $onSurfaceVariant;
+    margin: 0 8px;
+    min-width: 45px;
+    /* Use xalign instead of text-align for GTK */
+    /* text-align is not supported in GTK CSS */
 }
