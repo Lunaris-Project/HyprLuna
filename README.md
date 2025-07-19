@@ -106,7 +106,7 @@
 </br>
 <h1>Do you need help or join us? <a href="https://discord.gg/qnAHD9keWr">Join Here</a><h1>
 </div>
-<h1>To install please read our official website: <a href="https://hyprluna.vercel.app">Hyprluna wiki</a></h1>
+<h1>To install please read our official website: <a href="https://hyprluna.org">Hyprluna wiki</a></h1>
 </div>
 <div align="center" style="background-color: #11111b; border-radius: 8px; padding: 15px;">
 
