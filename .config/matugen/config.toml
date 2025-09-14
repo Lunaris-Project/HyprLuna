@@ -56,9 +56,9 @@ post_hook = "hyprctl reload"
 input_path = "~/.config/matugen/templates/hyprland-colors.conf"
 output_path = "~/.cache/ags/user/generated/colors.conf"
 
-[templates.hyprplugins]
-input_path = "~/.config/matugen/templates/hyprplugins.conf"
-output_path = "~/.config/hypr/hyprland/plugins/default.conf"
+#[templates.hyprplugins]
+#input_path = "~/.config/matugen/templates/hyprplugins.conf"
+#output_path = "~/.config/hypr/hyprland/plugins/default.conf"
 
 # Terminals
 
