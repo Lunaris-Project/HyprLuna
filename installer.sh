@@ -108,7 +108,7 @@ PACMAN_PREREQ_PACKAGES=(
 
 # Packages to install with paru
 PARU_PACKAGES=(
-    "hyprland" "axel" "bc" "coreutils" "cliphist" "cmake" "curl" "rofi-wayland" "rofi-emoji" "rofi-calc" "rofi-dmenu" "rsync" "cpio" "wget" "ripgrep" "jq" "npm" "meson"
+    "hyprland" "axel" "bc" "coreutils" "cliphist" "cmake" "curl" "rofi-wayland" "rofi-emoji" "rofi-calc" "rsync" "cpio" "wget" "ripgrep" "jq" "npm" "meson"
     "typescript" "gjs" "xdg-user-dirs" "brightnessctl" "ddcutil" "pavucontrol" "wireplumber" "libdbusmenu-gtk3" "kitty"
     "playerctl" "swww" "gobject-introspection" "glib2-devel" "gvfs" "glib2" "glibc" "gtk3" "gtk-layer-shell" "libpulse"
     "pam" "gnome-bluetooth-3.0" "gammastep" "libsoup3" "libnotify" "networkmanager" "power-profiles-daemon" "upower"
